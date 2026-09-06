@@ -11,6 +11,7 @@ import {
   type Geslacht,
 } from '../lib/datasets'
 import { bestFit, clamp, missLabel, type Line, type Point } from '../lib/regression'
+import { DATA, DERDE, FOUT, INK, MODEL } from '../lib/palette'
 
 /* ------------------------------------------------------------------ *
  * Les 2 - Data-dokter. Eén doel: de leerling beslist welke rijen het
@@ -108,18 +109,13 @@ const FALLBACK_VIEW: View = { x0: 33, x1: 50, y0: 145, y1: 195 }
  */
 const OPENING_VIEW: View = fitView(ECHTE_PUNTEN, { padFrac: 0.12 }) ?? FALLBACK_VIEW
 
-/* ---- CodeFever-palet. Alleen deze vier merken, niets ernaast. ---- */
-
-/** De lijn van het model. */
-const MODEL = '#4c6fe0'
-/** Rijen die in het model zitten. */
-const NAVY = '#00065d'
-/** Wat kapot is: een rij zonder lengte. */
-const OKER = '#b8791f'
-/** De derde toestand: door de leerling weggegooid. */
-const GROEN = '#1f8a6d'
-/** Tekst en de aanwijzer. Geen merk, dus geen eigen betekenis. */
-const INK = '#3f4165'
+/* ---- Alleen deze vier merken, niets ernaast. Ze komen uit lib/palette,
+       want een bord hoort geen eigen kopie van een kleur te bewaren:
+         MODEL  de lijn van het model
+         DATA   rijen die in het model zitten
+         FOUT   wat kapot is: een rij zonder lengte
+         DERDE  door de leerling weggegooid
+       INK is tekst en de aanwijzer, en dus geen merk. ---- */
 
 /**
  * Drie toestanden, en elke rij zit in precies één ervan. Samen tellen ze
@@ -134,7 +130,7 @@ const WOORD: Record<Staat, string> = {
   geen: 'geen lengte',
 }
 
-const KLEUR: Record<Staat, string> = { in: NAVY, weg: GROEN, geen: OKER }
+const KLEUR: Record<Staat, string> = { in: DATA, weg: DERDE, geen: FOUT }
 
 const staatVan = (r: DokterRow, weg: ReadonlySet<number>): Staat =>
   weg.has(r.id) ? 'weg' : r.lengte === null ? 'geen' : 'in'
@@ -186,10 +182,10 @@ const CRASH = ["ValueError: could not convert string to float: 'NA'"]
  * op een kleur die niets betekent.
  */
 const OORDEEL: Record<string, string> = {
-  'heel goed': GROEN,
-  bruikbaar: GROEN,
-  'zit ernaast': OKER,
-  'zit ver ernaast': OKER,
+  'heel goed': DERDE,
+  bruikbaar: DERDE,
+  'zit ernaast': FOUT,
+  'zit ver ernaast': FOUT,
 }
 
 export default function DataDokter() {
@@ -477,7 +473,7 @@ export default function DataDokter() {
           <button
             type="button"
             onClick={opnieuw}
-            className="shrink-0 text-[12px] font-semibold text-purple underline-offset-2 hover:underline"
+            className="shrink-0 text-[12px] font-semibold text-model underline-offset-2 hover:underline"
           >
             Begin opnieuw
           </button>
@@ -599,7 +595,7 @@ export default function DataDokter() {
             <button
               type="button"
               onClick={() => setPythonOpen((v) => !v)}
-              className="mt-1.5 text-[12px] font-semibold text-purple underline-offset-2 hover:underline"
+              className="mt-1.5 text-[12px] font-semibold text-model underline-offset-2 hover:underline"
             >
               {pythonOpen ? 'Verberg wat Python zegt' : 'Toon wat Python zegt'}
             </button>
@@ -622,7 +618,7 @@ export default function DataDokter() {
             <button
               type="button"
               onClick={() => zetNa(false)}
-              className="mt-1.5 text-[12px] font-semibold text-purple underline-offset-2 hover:underline"
+              className="mt-1.5 text-[12px] font-semibold text-model underline-offset-2 hover:underline"
             >
               Zet ze terug
             </button>
@@ -643,16 +639,17 @@ export default function DataDokter() {
  */
 function Vorm({ staat, cx, cy, r = 6 }: { staat: Staat; cx: number; cy: number; r?: number }) {
   if (staat === 'in') {
-    return <circle cx={cx} cy={cy} r={r} fill={NAVY} stroke="#fff" strokeWidth={1.5} />
+    return <circle cx={cx} cy={cy} r={r} fill={DATA} stroke="#fff" strokeWidth={1.5} />
   }
   if (staat === 'weg') {
     const k = r * 0.62
     return (
       <g>
-        <circle cx={cx} cy={cy} r={r + 1} fill="#fff" stroke={GROEN} strokeWidth={2.2} />
+        <circle cx={cx} cy={cy} r={r + 1} fill="#fff" stroke={DERDE} strokeWidth={2.2} />
         <path
           d={`M${cx - k} ${cy - k}L${cx + k} ${cy + k}M${cx - k} ${cy + k}L${cx + k} ${cy - k}`}
-          stroke={GROEN}
+          fill="none"
+          stroke={DERDE}
           strokeWidth={2}
           strokeLinecap="round"
         />
@@ -671,12 +668,13 @@ function Vorm({ staat, cx, cy, r = 6 }: { staat: Staat; cx: number; cy: number; 
         height={s * 2}
         rx={2}
         fill="#fff"
-        stroke={OKER}
+        stroke={FOUT}
         strokeWidth={2.2}
       />
       <path
         d={`M${cx - s * 0.45} ${cy}L${cx + s * 0.45} ${cy}`}
-        stroke={OKER}
+        fill="none"
+        stroke={FOUT}
         strokeWidth={2}
         strokeLinecap="round"
       />
@@ -822,7 +820,7 @@ function Randmerk({
           <circle cx={x} cy={y} r={15} fill="none" stroke={INK} strokeWidth={2} />
         </>
       )}
-      <polygon points={punt} fill={NAVY} stroke="#fff" strokeWidth={1.5} />
+      <polygon points={punt} fill={DATA} stroke="#fff" strokeWidth={1.5} />
       <text
         x={naarLinks ? x - 16 : x + 16}
         y={y + 5}
@@ -872,8 +870,8 @@ function Balk({ man, vrouw }: { man: number; vrouw: number }) {
   const totaal = Math.max(1, man + vrouw)
   return (
     <div className="mt-1 flex h-[5px] w-full overflow-hidden rounded-full bg-black/[0.06]">
-      <div className="h-full bg-purple" style={{ width: `${(man / totaal) * 100}%` }} />
-      <div className="h-full bg-purple/25" style={{ width: `${(vrouw / totaal) * 100}%` }} />
+      <div className="h-full bg-model" style={{ width: `${(man / totaal) * 100}%` }} />
+      <div className="h-full bg-model/25" style={{ width: `${(vrouw / totaal) * 100}%` }} />
     </div>
   )
 }
@@ -936,7 +934,7 @@ function TabelRij({
       onBlur={() => onWijs(null)}
       onClick={() => onKlik(rij.id)}
       title={`${WOORD[staat]} - klik om ze ${uit ? 'terug te zetten' : 'weg te gooien'}`}
-      className={`grid w-full grid-cols-[14px_3rem_2.25rem_3.9rem_1fr] items-center gap-x-1 rounded-md px-1 py-[2px] text-left text-[12.5px] leading-[17px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-purple/35 [@media(max-height:780px)]:py-0 ${
+      className={`grid w-full grid-cols-[14px_3rem_2.25rem_3.9rem_1fr] items-center gap-x-1 rounded-md px-1 py-[2px] text-left text-[12.5px] leading-[17px] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-model/35 [@media(max-height:780px)]:py-0 ${
         gekozen ? 'bg-ink/[0.07]' : gewezen ? 'bg-fout/10' : 'hover:bg-ink/[0.04]'
       }`}
       style={gekozen ? { boxShadow: `inset 2px 0 0 ${INK}` } : undefined}
@@ -945,7 +943,7 @@ function TabelRij({
       <span className={uit ? 'text-muted line-through' : 'text-ink'}>{rij.geslacht}</span>
       <span
         className={`text-right tabular-nums ${uit ? 'text-muted line-through' : ''}`}
-        style={!uit && rij.lengte === null ? { color: OKER, fontWeight: 700 } : undefined}
+        style={!uit && rij.lengte === null ? { color: FOUT, fontWeight: 700 } : undefined}
       >
         {lengteCel(rij.lengte)}
       </span>

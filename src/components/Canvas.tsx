@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { clamp, type Line, type Point } from '../lib/regression'
+import { DATA, FOUT, FOUT_INK, INK, MODEL } from '../lib/palette'
 
 /* ------------------------------------------------------------------ *
  * A pannable / zoomable 2D board - the shared primitive for every
@@ -636,7 +637,7 @@ export default function Canvas({
               y={ih - safe.bottom - 30}
               textAnchor="end"
               fontSize={13.5}
-              fill="#3f4165"
+              fill={INK}
               fontWeight={700}
               stroke="#fff"
               strokeWidth={3.5}
@@ -652,7 +653,7 @@ export default function Canvas({
               y={safe.top + 16}
               textAnchor="end"
               fontSize={13.5}
-              fill="#3f4165"
+              fill={INK}
               fontWeight={700}
               stroke="#fff"
               strokeWidth={3.5}
@@ -713,7 +714,7 @@ function ViewBtn({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-8 min-w-8 items-center justify-center px-1.5 text-[15px] leading-none text-ink transition hover:bg-purple/8 active:bg-purple/14"
+      className="flex h-8 min-w-8 items-center justify-center px-1.5 text-[15px] leading-none text-ink transition hover:bg-model/8 active:bg-model/14"
     >
       {children}
     </button>
@@ -729,7 +730,7 @@ const komma = (v: number) => v.toFixed(1).replace('.', ',')
 export function LineShape({
   line,
   scales,
-  color = '#4c6fe0',
+  color = MODEL,
   width = 2.5,
   dashed = false,
   opacity = 1,
@@ -761,7 +762,7 @@ export function Residuals({
   points,
   line,
   scales,
-  color = '#b8791f',
+  color = FOUT,
   width = 1.25,
   opacity = 0.45,
 }: {
@@ -793,11 +794,11 @@ export function Residuals({
 export function Dots({
   points,
   scales,
-  color = '#00065d',
+  color = DATA,
   r = 4.5,
   opacity = 0.9,
   onPointClick,
-  markedColor = '#b8791f',
+  markedColor = FOUT,
   isMarked,
   title,
 }: {
@@ -873,7 +874,7 @@ export function DragDot({
   point,
   scales,
   onMove,
-  color = '#b8791f',
+  color = FOUT,
   r = 8,
   step,
   snap = false,
@@ -992,15 +993,15 @@ export function MissMarker({
   const gap = Math.abs(actual - predicted)
   return (
     <g pointerEvents="none">
-      <line x1={px} y1={ay} x2={px} y2={py} stroke="#b8791f" strokeWidth={2.5} strokeLinecap="round" />
-      <circle cx={px} cy={ay} r={5.5} fill="#b8791f" stroke="#fff" strokeWidth={2} />
-      <circle cx={px} cy={py} r={4.5} fill="#fff" stroke="#b8791f" strokeWidth={2.5} />
+      <line x1={px} y1={ay} x2={px} y2={py} stroke={FOUT} strokeWidth={2.5} strokeLinecap="round" />
+      <circle cx={px} cy={ay} r={5.5} fill={FOUT} stroke="#fff" strokeWidth={2} />
+      <circle cx={px} cy={py} r={4.5} fill="#fff" stroke={FOUT} strokeWidth={2.5} />
       <text
         x={px + 10}
         y={(ay + py) / 2 + 4}
         fontSize={13.5}
         fontWeight={700}
-        fill="#8a5a12"
+        fill={FOUT_INK}
         stroke="#fff"
         strokeWidth={3.5}
         paintOrder="stroke"

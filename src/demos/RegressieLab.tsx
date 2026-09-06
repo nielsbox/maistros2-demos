@@ -18,6 +18,7 @@ import {
   type Line,
   type Point,
 } from '../lib/regression'
+import { DERDE, DERDE_INK, MODEL, MUTED, RULE } from '../lib/palette'
 
 /* ------------------------------------------------------------------ *
  * Les 1 - Regressie-lab.
@@ -39,16 +40,21 @@ import {
  * lopen en ergens anders eindigen.
  *
  * Woordafspraak, en die is hier de halve les: de bolletjes met de data
- * heten ALTIJD "punt", de oranje knop op de x-as heet ALTIJD "handvat".
+ * heten ALTIJD "punt", de knop op de x-as heet ALTIJD "handvat".
  * Nooit door elkaar, ook niet in een aria-label. Wie denkt dat een punt
  * sleepbaar is, sleept eraan en wist het per ongeluk. "Schuifknop" is
  * gereserveerd voor de echte html-slider op "Hoe goed past de lijn?".
  * ------------------------------------------------------------------ */
 
-const MODEL = '#4c6fe0'
-const AMBER = '#f59e0b'
-const AMBER_INK = '#b45309'
-const GREY = '#6b6b78'
+/* Rolverdeling op dit bord, en verder niets:
+ *   MODEL  de lijn
+ *   DATA   de punten (staat in Dots, de standaard van Canvas)
+ *   DERDE  het handvat op de x-as met zijn stippellijnen en zijn bolletje
+ * Het handvat is niet fout en het is niet het model, dus het krijgt de derde
+ * merkkleur. Het was #f59e0b, en dat stond in geen enkele tabel: het haalde
+ * maar 2,15:1 op wit, te weinig om van ver een merk te zijn. */
+const HANDVAT = DERDE
+const HANDVAT_INK = DERDE_INK
 
 const MAX_POINTS = 120
 
@@ -532,7 +538,7 @@ export default function RegressieLab() {
             // het gaat drie keer over hetzelfde oude model.
             'van het oude model'
           : badge?.label
-  const scoreColor = bezig || !model || verouderd ? GREY : (badge?.color ?? GREY)
+  const scoreColor = bezig || !model || verouderd ? MUTED : (badge?.color ?? MUTED)
 
   const voorspelling = lijn ? predict(lijn, predX) : null
 
@@ -589,7 +595,7 @@ export default function RegressieLab() {
                   textAnchor="middle"
                   fontSize={13}
                   fontWeight={700}
-                  fill={GREY}
+                  fill={MUTED}
                   stroke="#fff"
                   strokeWidth={3.5}
                   paintOrder="stroke"
@@ -606,7 +612,7 @@ export default function RegressieLab() {
                   textAnchor="middle"
                   fontSize={13.5}
                   fontWeight={600}
-                  fill={GREY}
+                  fill={MUTED}
                   stroke="#fff"
                   strokeWidth={3.5}
                   paintOrder="stroke"
@@ -628,7 +634,7 @@ export default function RegressieLab() {
                     y1={s.sy(markY)}
                     x2={s.sx(predX)}
                     y2={s.sy(predY)}
-                    stroke={AMBER}
+                    stroke={HANDVAT}
                     strokeWidth={1.75}
                     strokeDasharray="5 5"
                   />
@@ -637,7 +643,7 @@ export default function RegressieLab() {
                     y1={s.sy(predY)}
                     x2={s.area.left}
                     y2={s.sy(predY)}
-                    stroke={AMBER}
+                    stroke={HANDVAT}
                     strokeWidth={1.75}
                     strokeDasharray="5 5"
                   />
@@ -645,7 +651,7 @@ export default function RegressieLab() {
                     cx={s.sx(predX)}
                     cy={s.sy(predY)}
                     r={5.5}
-                    fill={AMBER}
+                    fill={HANDVAT}
                     stroke="#fff"
                     strokeWidth={2}
                   />
@@ -655,7 +661,7 @@ export default function RegressieLab() {
                       y={s.sy(predY) - 11}
                       fontSize={14}
                       fontWeight={700}
-                      fill={AMBER_INK}
+                      fill={HANDVAT_INK}
                       stroke="#fff"
                       strokeWidth={3.5}
                       paintOrder="stroke"
@@ -677,7 +683,7 @@ export default function RegressieLab() {
                       const v = viewRef.current
                       setPredX(roundTo(clamp(p.x, v.x0, v.x1), ds.predStep))
                     }}
-                    color={AMBER}
+                    color={HANDVAT}
                     r={8}
                     cursor="ew-resize"
                     step={{ x: ds.predStep, y: ds.predStep }}
@@ -691,7 +697,7 @@ export default function RegressieLab() {
                     y={s.sy(markY) + 5}
                     fontSize={13.5}
                     fontWeight={700}
-                    fill={AMBER_INK}
+                    fill={HANDVAT_INK}
                     stroke="#fff"
                     strokeWidth={3.5}
                     paintOrder="stroke"
@@ -791,7 +797,7 @@ export default function RegressieLab() {
             value={voorspelling === null ? '-' : ds.fmtY(voorspelling)}
             unit={voorspelling === null ? undefined : ds.yUnit}
             sub={voorspelling === null ? 'train eerst een model' : ds.predSub(predX)}
-            color={voorspelling === null || oud ? GREY : AMBER_INK}
+            color={voorspelling === null || oud ? MUTED : HANDVAT_INK}
           />
         </div>
       </Panel>
@@ -875,7 +881,7 @@ function FoutCurve({ values, oud }: { values: number[]; oud: boolean }) {
   const path = values.map((v, i) => `${px(i).toFixed(1)},${py(v).toFixed(1)}`).join(' ')
   // Hoort de curve nog bij het model dat er staat? Zo niet, dan vergrijst ze
   // mee met de streepjeslijn van het oude model.
-  const kleur = oud ? GREY : MODEL
+  const kleur = oud ? MUTED : MODEL
 
   return (
     <svg
@@ -886,12 +892,12 @@ function FoutCurve({ values, oud }: { values: number[]; oud: boolean }) {
       role="img"
       aria-label="De totale fout na elke poging tijdens het trainen."
     >
-      <line x1={L} y1={T - 4} x2={L} y2={B} stroke="#e6e4ec" strokeWidth={1} />
-      <line x1={L} y1={B} x2={R} y2={B} stroke="#e6e4ec" strokeWidth={1} />
-      <text x={L - 2} y={10} fontSize={10.5} fontWeight={600} fill={GREY}>
+      <line x1={L} y1={T - 4} x2={L} y2={B} stroke={RULE} strokeWidth={1} />
+      <line x1={L} y1={B} x2={R} y2={B} stroke={RULE} strokeWidth={1} />
+      <text x={L - 2} y={10} fontSize={10.5} fontWeight={600} fill={MUTED}>
         fout
       </text>
-      <text x={R} y={H - 3} textAnchor="end" fontSize={10.5} fontWeight={600} fill={GREY}>
+      <text x={R} y={H - 3} textAnchor="end" fontSize={10.5} fontWeight={600} fill={MUTED}>
         poging
       </text>
       {leeg && (
@@ -900,7 +906,7 @@ function FoutCurve({ values, oud }: { values: number[]; oud: boolean }) {
           y={(T + B) / 2 + 4}
           textAnchor="middle"
           fontSize={11}
-          fill={GREY}
+          fill={MUTED}
           opacity={0.75}
         >
           nog niet getraind
@@ -960,8 +966,8 @@ function SegBtn({
       aria-pressed={active}
       className={`rounded-lg border px-2 py-1.5 text-[12.5px] font-semibold transition ${
         active
-          ? 'border-purple bg-purple text-white'
-          : 'border-purple/20 text-purple hover:bg-purple/6'
+          ? 'border-model bg-model text-white'
+          : 'border-model/20 text-model hover:bg-model/6'
       }`}
     >
       {label}

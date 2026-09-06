@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Canvas, { Dots, DragDot, LineShape, Residuals } from '../components/Canvas'
 import { Brief, Btn, Divider, Legend, Note, Panel, PyChip, Readout } from '../components/Overlay'
 import { predict, seeded, sumSquaredError, type Line, type Point } from '../lib/regression'
+import { DATA, FOUT, MODEL, MUTED, RULE } from '../lib/palette'
 
 /* ------------------------------------------------------------------ *
  * Les 1 - Teken de lijn.
@@ -35,9 +36,6 @@ const POINTS: Point[] = (() => {
 /* --------------------------- de marks ---------------------------- *
  * Gevalideerde bordkleuren (zie index.css): het model, de misser, de data.
  * Niet met de hand bijstellen. */
-const MODEL = '#4c6fe0'
-const MISS = '#b8791f'
-const DATA = '#00065d'
 
 /* ---------------------------- ZOEKEN ------------------------------ *
  * Echte afdaling op de fout, niet een glijbaan naar een gekend antwoord.
@@ -197,7 +195,7 @@ export default function TekenDeLijn() {
       <Canvas defaultView={VIEW} xLabel="x" yLabel="y">
         {(s) => (
           <>
-            <Residuals points={POINTS} line={line} scales={s} color={MISS} width={1.75} opacity={0.6} />
+            <Residuals points={POINTS} line={line} scales={s} color={FOUT} width={1.75} opacity={0.6} />
             <LineShape line={line} scales={s} color={MODEL} />
             <Dots points={POINTS} scales={s} color={DATA} />
             {([0, 1] as const).map((i) => (
@@ -282,7 +280,7 @@ export default function TekenDeLijn() {
 
         <Legend
           items={[
-            { color: MISS, label: 'de fout bij één punt' },
+            { color: FOUT, label: 'de fout bij één punt' },
             { color: MODEL, label: 'jouw lijn' },
           ]}
         />
@@ -337,12 +335,12 @@ function ErrorCurve({ values }: { values: number[] }) {
       role="img"
       aria-label="De totale fout per poging, van hoog naar bijna vlak."
     >
-      <line x1={L} y1={T - 4} x2={L} y2={B} stroke="#e6e4ec" strokeWidth={1} />
-      <line x1={L} y1={B} x2={R} y2={B} stroke="#e6e4ec" strokeWidth={1} />
-      <text x={L - 2} y={10} fontSize={10.5} fontWeight={600} fill="#6b6b78">
+      <line x1={L} y1={T - 4} x2={L} y2={B} stroke={RULE} strokeWidth={1} />
+      <line x1={L} y1={B} x2={R} y2={B} stroke={RULE} strokeWidth={1} />
+      <text x={L - 2} y={10} fontSize={10.5} fontWeight={600} fill={MUTED}>
         fout
       </text>
-      <text x={R} y={H - 3} textAnchor="end" fontSize={10.5} fontWeight={600} fill="#6b6b78">
+      <text x={R} y={H - 3} textAnchor="end" fontSize={10.5} fontWeight={600} fill={MUTED}>
         poging
       </text>
       {leeg && (
@@ -351,7 +349,7 @@ function ErrorCurve({ values }: { values: number[] }) {
           y={(T + B) / 2 + 4}
           textAnchor="middle"
           fontSize={11}
-          fill="#6b6b78"
+          fill={MUTED}
           opacity={0.75}
         >
           nog niet gezocht

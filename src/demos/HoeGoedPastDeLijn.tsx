@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import Canvas, { Dots, DragDot, LineShape, Residuals, type View } from '../components/Canvas'
 import { Brief, Btn, Divider, Note, Panel, PyChip, Readout } from '../components/Overlay'
 import { bestFit, clamp, r2, scoreLabel, seeded, type Line, type Point } from '../lib/regression'
+import { MODEL } from '../lib/palette'
 
 /* ------------------------------------------------------------------ *
  * Les 1: wat regr.score() eigenlijk zegt.
@@ -38,8 +39,11 @@ const HANDLE_X = 8
 const HANDLE_Y_MIN = CY + SLOPE_MIN * (HANDLE_X - CX)
 const HANDLE_Y_MAX = CY + SLOPE_MAX * (HANDLE_X - CX)
 
-const GREY = '#9b98a8'
-const LIJN = '#4c6fe0' // validated mark colour, see CLAUDE.md
+/* De streepjeslijn "altijd het gemiddelde" is geen merk maar een ijkpunt: ze
+ * moet duidelijk ACHTER de lijn van het model liggen. Daarom staan deze twee
+ * grijzen bewust lichter dan --color-muted, en horen ze niet in het palet. */
+const GEMIDDELDE = '#9b98a8'
+const GEMIDDELDE_TEKST = '#8b8797'
 
 export default function HoeGoedPastDeLijn() {
   // Niet op de platte lijn starten: die valt exact samen met de streepjeslijn,
@@ -60,13 +64,13 @@ export default function HoeGoedPastDeLijn() {
         {(s) => (
           <>
             {/* De referentie waar de score tegen afgemeten wordt. Staat er altijd. */}
-            <LineShape line={MEAN_LINE} scales={s} color={GREY} width={1.75} dashed />
+            <LineShape line={MEAN_LINE} scales={s} color={GEMIDDELDE} width={1.75} dashed />
             <text
               x={s.safe.left + 12}
               y={s.sy(CY) - 9}
               fontSize={11}
               fontWeight={500}
-              fill="#8b8797"
+              fill={GEMIDDELDE_TEKST}
               pointerEvents="none"
             >
               altijd het gemiddelde
@@ -74,13 +78,13 @@ export default function HoeGoedPastDeLijn() {
 
             {/* Zonder deze streepjes verandert er alleen een getal. */}
             <Residuals points={POINTS} line={line} scales={s} opacity={0.5} />
-            <LineShape line={line} scales={s} color={LIJN} />
+            <LineShape line={line} scales={s} color={MODEL} />
             <Dots points={POINTS} scales={s} />
 
             <DragDot
               point={{ x: HANDLE_X, y: line.a * HANDLE_X + line.b }}
               scales={s}
-              color={LIJN}
+              color={MODEL}
               r={6}
               cursor="ns-resize"
               ariaLabel="handvat: kantel de lijn"

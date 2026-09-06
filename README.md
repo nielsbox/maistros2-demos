@@ -64,8 +64,14 @@ Regels die uit echte fouten in de klas komen:
   `Math.random`, zodat elke leerling en elke beamer hetzelfde beeld ziet.
 
 Kleuren zijn berekend, niet gekozen: de lijn van het model `#4c6fe0`, missers `#b8791f`, een derde
-toestand `#1f8a6d`, datapunten `#00065d`. Getoetst op kleurenblindheid; rood tegen groen zakt door
-elke test.
+toestand `#1f8a6d`, datapunten `#00065d`. Het handvat op de x-as van het Regressie-lab is niet fout
+en niet het model, dus dat is de derde toestand. Bij elk merk hoort een inkt voor tekst: `#8a5a12`
+en `#187159`. Getoetst op kleurenblindheid; rood tegen groen zakt door elke test.
+
+Die waarden staan op precies één plaats, het `@theme`-blok in `src/index.css`. De borden lezen ze
+via `src/lib/palette.ts` en schrijven zelf nooit een hex op. De namen zeggen wat een kleur betekent,
+nooit hoe ze eruitziet: een token die `purple` heette maar blauw tekende, stuurde leerlingen ooit op
+zoek naar een paars handvat dat er niet was.
 
 ## Verwant
 

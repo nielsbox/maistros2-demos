@@ -1,4 +1,5 @@
 import { Children, useEffect, useRef, useState, type ReactNode } from 'react'
+import { NAVY } from '../lib/palette'
 
 /* ------------------------------------------------------------------ *
  * Floating overlays that sit on top of the board. Deliberately quiet:
@@ -83,7 +84,7 @@ export function Brief({
               setOpen((v) => !v)
             }}
             aria-label={open ? 'Uitleg inklappen' : 'Uitleg uitklappen'}
-            className="-mr-1 -mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md text-[15px] leading-none text-muted transition hover:bg-purple/8"
+            className="-mr-1 -mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-md text-[15px] leading-none text-muted transition hover:bg-model/8"
           >
             {open ? '−' : '+'}
           </button>
@@ -105,7 +106,7 @@ export function Readout({
   value,
   unit,
   sub,
-  color = '#00065d',
+  color = NAVY,
 }: {
   label: string
   value: string
@@ -176,7 +177,7 @@ export function Check({
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-[2px] size-3.5 accent-purple"
+        className="mt-[2px] size-3.5 accent-model"
       />
       <span>{children}</span>
     </label>
@@ -204,20 +205,20 @@ export function Steps({
               type="button"
               disabled={!clickable}
               onClick={() => onSelect?.(i)}
-              className={`flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-[13px] outline-none transition focus-visible:ring-2 focus-visible:ring-purple/35 ${
+              className={`flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-[13px] outline-none transition focus-visible:ring-2 focus-visible:ring-model/35 ${
                 state === 'now'
                   ? 'font-semibold text-navy'
                   : state === 'past'
-                    ? 'text-muted hover:bg-purple/6'
+                    ? 'text-muted hover:bg-model/6'
                     : 'text-muted/55'
               } ${clickable ? 'cursor-pointer' : 'cursor-default'}`}
             >
               <span
                 className={`flex size-[18px] shrink-0 items-center justify-center rounded-full text-[10.5px] font-semibold ${
                   state === 'now'
-                    ? 'bg-purple text-white'
+                    ? 'bg-model text-white'
                     : state === 'past'
-                      ? 'bg-purple/14 text-purple'
+                      ? 'bg-model/14 text-model'
                       : 'bg-black/[0.05] text-muted'
                 }`}
               >
@@ -234,14 +235,14 @@ export function Steps({
 
 export function PyChip({ children }: { children: ReactNode }) {
   return (
-    <code className="rounded bg-purple/10 px-1.5 py-px font-mono text-[12px] text-purple">
+    <code className="rounded bg-model/10 px-1.5 py-px font-mono text-[12px] text-model">
       {children}
     </code>
   )
 }
 
 const TONES = {
-  info: 'bg-cyan/8 text-navy',
+  info: 'bg-derde/8 text-navy',
   win: 'bg-emerald-50 text-emerald-900',
   warn: 'bg-amber-50 text-amber-900',
   err: 'bg-rose-50 text-rose-900',

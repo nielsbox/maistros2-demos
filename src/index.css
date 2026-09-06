@@ -15,18 +15,28 @@
      stepped into a band that passes the six colour checks: lightness, chroma,
      CVD separation, normal-vision floor and contrast. Worst adjacent pair is
      dE 8.9 protan / 18.6 normal. Do not hand-tune these; re-run
-     scripts/validate_palette.js if they ever change. */
+     scripts/validate_palette.js if they ever change.
+
+     This block is the ONLY place a mark colour is written down. Boards read
+     them through src/lib/palette.ts, never as their own hex: a board that
+     keeps a private copy is a board that drifts. */
   --color-model: #4c6fe0; /* the fitted line: the one accent that carries meaning */
   --color-fout: #b8791f; /* misses, suspect rows, anything wrong */
   --color-derde: #1f8a6d; /* a third state, only where one is genuinely needed */
 
-  /* legacy aliases, kept so nothing breaks mid-refactor */
-  --color-purple: #4c6fe0;
-  --color-pink: #b8791f;
-  --color-cyan: #1f8a6d;
-  --color-muted: #6b6b78;
-  --color-line: #e6e4ec;
-  --color-paper: #fcfbff;
+  /* Each mark has an ink: the same hue darkened until on-board text clears
+     4.5:1 on white. Ink is for LABELS ONLY. It is too dark and too grey to be
+     a mark - as a pair the two inks fail the chroma floor (0.09) and the
+     normal-vision floor (dE 14.7), so never draw with them. */
+  --color-fout-ink: #8a5a12; /* 5.91:1 on white */
+  --color-derde-ink: #187159; /* 5.92:1 on white */
+
+  /* Surfaces and text. Named by role, and deliberately not by hue: "line" was
+     the old name of the hairline below, and in this project "lijn" is the
+     model's line and nothing else. */
+  --color-muted: #6b6b78; /* secondary text, axis labels */
+  --color-rule: #e6e4ec; /* hairline: axis rules, borders */
+  --color-paper: #fcfbff; /* the page behind the board */
 
   /* HK Nova and Gosha Sans are proprietary; these are the closest free
      equivalents (Hanken Grotesk is by the same foundry as HK Nova). */
@@ -84,7 +94,7 @@ input[type='range'] {
 input[type='range']::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: 9999px;
-  background: color-mix(in srgb, var(--color-purple) 16%, white);
+  background: color-mix(in srgb, var(--color-model) 16%, white);
 }
 input[type='range']::-webkit-slider-thumb {
   appearance: none;
@@ -93,18 +103,18 @@ input[type='range']::-webkit-slider-thumb {
   width: 16px;
   border-radius: 9999px;
   background: #fff;
-  border: 2px solid var(--color-purple);
+  border: 2px solid var(--color-model);
   box-shadow: 0 1px 4px rgb(26 11 46 / 0.18);
 }
 input[type='range']::-moz-range-track {
   height: 4px;
   border-radius: 9999px;
-  background: color-mix(in srgb, var(--color-purple) 16%, white);
+  background: color-mix(in srgb, var(--color-model) 16%, white);
 }
 input[type='range']::-moz-range-thumb {
   height: 16px;
   width: 16px;
-  border: 2px solid var(--color-purple);
+  border: 2px solid var(--color-model);
   border-radius: 9999px;
   background: #fff;
 }
