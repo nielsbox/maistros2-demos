@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import Canvas, { Dots, DragDot, LineShape, Residuals, type View } from '../components/Canvas'
 import { Brief, Btn, Divider, Note, Panel, PyChip, Readout } from '../components/Overlay'
 import { bestFit, clamp, r2, scoreLabel, seeded, type Line, type Point } from '../lib/regression'
-import { MODEL } from '../lib/palette'
+import { MODEL, NAVY } from '../lib/palette'
 
 /* ------------------------------------------------------------------ *
  * Les 1: wat regr.score() eigenlijk zegt.
@@ -127,7 +127,7 @@ export default function HoeGoedPastDeLijn() {
         onder glas. 12rem laat de Brief altijd vrij, ook ingeklapt.
       */}
       <Panel className="pointer-events-auto absolute bottom-4 left-4 z-10 max-h-[calc(100%-12rem)] w-[16rem] overflow-y-auto px-4 py-3.5 xl:w-[21rem]">
-        <Readout label="Score" value={score.toFixed(2).replace('.', ',')} sub={badge.label} color={badge.color} />
+        <Readout label="Score" value={score.toFixed(2).replace('.', ',')} sub={badge.label} color={NAVY} />
 
         <Divider />
 

@@ -76,21 +76,32 @@ export function r2(points: Point[], line: Line): number {
   return 1 - ssRes / ssTot
 }
 
-/** Qualitative label for a score, so we never lean on the number alone. */
-export function scoreLabel(score: number): { label: string; color: string; face: string } {
-  if (score >= 0.9) return { label: 'bijna door elk punt', color: '#16a34a', face: '' }
-  if (score >= 0.7) return { label: 'dicht bij de punten', color: '#16a34a', face: '' }
-  if (score >= 0.4) return { label: 'beter dan het gemiddelde', color: '#d97706', face: '' }
-  if (score >= 0) return { label: 'amper beter dan het gemiddelde', color: '#dc2626', face: '' }
-  return { label: 'slechter dan het gemiddelde raden', color: '#dc2626', face: '' }
+/**
+ * Wat een score betekent, in woorden die je van het bord kunt aflezen.
+ *
+ * Er hoort GEEN kleur bij. Deze functies gaven ooit groen, oranje en rood
+ * terug, en dat was op twee manieren fout. Het paar zakte door de checker
+ * (deutan dE 5,0 tussen het groen en het rood, en dE 14,4 tussen het rood en
+ * het oranje voor normaal zicht), en rood tegen groen haalt het nooit, hoe je
+ * de stappen ook kiest. En het greep vooruit op de leerling: een bord dat het
+ * getal rood kleurt heeft het oordeel al geveld, terwijl "hoe goed past de
+ * lijn?" nu juist vraagt of de leerling dat zelf kan lezen. De zin eronder
+ * zegt het, het getal blijft neutraal.
+ */
+export function scoreLabel(score: number): { label: string } {
+  if (score >= 0.9) return { label: 'bijna door elk punt' }
+  if (score >= 0.7) return { label: 'dicht bij de punten' }
+  if (score >= 0.4) return { label: 'beter dan het gemiddelde' }
+  if (score >= 0) return { label: 'amper beter dan het gemiddelde' }
+  return { label: 'slechter dan het gemiddelde raden' }
 }
 
-/** Qualitative label for an average miss in centimetres. */
-export function missLabel(cm: number): { label: string; color: string; face: string } {
-  if (cm <= 3) return { label: 'heel goed', color: '#16a34a', face: '' }
-  if (cm <= 6) return { label: 'bruikbaar', color: '#16a34a', face: '' }
-  if (cm <= 12) return { label: 'zit ernaast', color: '#d97706', face: '' }
-  return { label: 'zit ver ernaast', color: '#dc2626', face: '' }
+/** Wat een gemiddelde misser in centimeter betekent. Ook hier: geen kleur. */
+export function missLabel(cm: number): { label: string } {
+  if (cm <= 3) return { label: 'heel goed' }
+  if (cm <= 6) return { label: 'bruikbaar' }
+  if (cm <= 12) return { label: 'zit ernaast' }
+  return { label: 'zit ver ernaast' }
 }
 
 /** Deterministic pseudo-random so every student sees the exact same data. */

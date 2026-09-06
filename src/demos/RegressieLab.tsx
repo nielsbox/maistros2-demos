@@ -18,7 +18,7 @@ import {
   type Line,
   type Point,
 } from '../lib/regression'
-import { DERDE, DERDE_INK, MODEL, MUTED, RULE } from '../lib/palette'
+import { DERDE, DERDE_INK, MODEL, MUTED, NAVY, RULE } from '../lib/palette'
 
 /* ------------------------------------------------------------------ *
  * Les 1 - Regressie-lab.
@@ -538,7 +538,9 @@ export default function RegressieLab() {
             // het gaat drie keer over hetzelfde oude model.
             'van het oude model'
           : badge?.label
-  const scoreColor = bezig || !model || verouderd ? MUTED : (badge?.color ?? MUTED)
+  // Het getal blijft neutraal; scoreSub zegt in woorden wat het betekent. Zie
+  // scoreLabel() in lib/regression.ts voor waarom hier geen oordeelskleur staat.
+  const scoreColor = bezig || !model || verouderd ? MUTED : NAVY
 
   const voorspelling = lijn ? predict(lijn, predX) : null
 
