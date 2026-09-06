@@ -1,0 +1,21 @@
+# Static SPA: Vite builds to dist/, and every path must fall through to
+# index.html so the per-demo routes work when embedded in a Studio slide.
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# The demos are embedded in an iframe on studio.ftrprf.be, so do not send
+# X-Frame-Options: DENY. Framing is intentional here.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"

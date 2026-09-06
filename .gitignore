@@ -1,0 +1,9 @@
+node_modules
+dist
+dist-deploy
+.netlify
+*.local
+.DS_Store
+
+# Lesmateriaal in bewerking. De startcode zelf staat in CodeFever-VZW/Maistros2.
+review

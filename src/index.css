@@ -1,0 +1,208 @@
+@import 'tailwindcss';
+
+@theme {
+  /* CodeFever house palette, sampled from codefever.be */
+  --color-navy: #00065d; /* headings and all button text */
+  --color-ink: #3f4165; /* body copy */
+  --color-lime: #b3ff86; /* the signature call-to-action */
+  --color-lime-deep: #c4ed4a;
+  --color-peri: #a8bbff;
+  --color-mint: #7fe3a5;
+  --color-sky: #aaf4ff;
+  --color-peach: #ffb085;
+
+  /* Board marks. Derived from the CodeFever hues (periwinkle, peach, mint) and
+     stepped into a band that passes the six colour checks: lightness, chroma,
+     CVD separation, normal-vision floor and contrast. Worst adjacent pair is
+     dE 8.9 protan / 18.6 normal. Do not hand-tune these; re-run
+     scripts/validate_palette.js if they ever change. */
+  --color-model: #4c6fe0; /* the fitted line: the one accent that carries meaning */
+  --color-fout: #b8791f; /* misses, suspect rows, anything wrong */
+  --color-derde: #1f8a6d; /* a third state, only where one is genuinely needed */
+
+  /* legacy aliases, kept so nothing breaks mid-refactor */
+  --color-purple: #4c6fe0;
+  --color-pink: #b8791f;
+  --color-cyan: #1f8a6d;
+  --color-muted: #6b6b78;
+  --color-line: #e6e4ec;
+  --color-paper: #fcfbff;
+
+  /* HK Nova and Gosha Sans are proprietary; these are the closest free
+     equivalents (Hanken Grotesk is by the same foundry as HK Nova). */
+  --font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Hanken Grotesk', ui-sans-serif, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  --radius-cf: 24px;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  overflow: hidden; /* the canvas is the page; nothing scrolls behind it */
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Keep drags from selecting text or kicking off native gestures. */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Miro-ish dot grid behind the plot. */
+.dot-grid {
+  background-image: radial-gradient(circle at 1px 1px, #e3e0ec 1.4px, transparent 0);
+  background-size: 26px 26px;
+}
+
+/* Floating overlay panel. */
+.panel {
+  background: rgb(255 255 255 / 0.86);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgb(26 11 46 / 0.07);
+  box-shadow:
+    0 1px 2px rgb(26 11 46 / 0.04),
+    0 8px 24px -8px rgb(26 11 46 / 0.14);
+}
+
+/* Slim, unobtrusive sliders. */
+input[type='range'] {
+  appearance: none;
+  height: 20px;
+  background: transparent;
+  cursor: ew-resize;
+}
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-purple) 16%, white);
+}
+input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  margin-top: -6px;
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 2px solid var(--color-purple);
+  box-shadow: 0 1px 4px rgb(26 11 46 / 0.18);
+}
+input[type='range']::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-purple) 16%, white);
+}
+input[type='range']::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border: 2px solid var(--color-purple);
+  border-radius: 9999px;
+  background: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation: none !important;
+  }
+}
+
+/* ---- CodeFever element styling (portal) ---- */
+.cf-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-lime);
+  color: var(--color-navy);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.42px;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.cf-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -6px rgb(0 6 93 / 0.35);
+}
+.cf-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  background: #fff;
+  color: var(--color-navy);
+  font-weight: 900;
+  font-size: 11px;
+  letter-spacing: 0.11px;
+  text-transform: uppercase;
+  padding: 9px 24px;
+}
+.cf-card {
+  border-radius: var(--radius-cf);
+  background: #fff;
+  /* A short child cannot honour a 24px corner: the browser clamps its radii to
+     half its height, so the strip's corners would jut past the card's. Clip
+     instead, and let the card's own radius define the shape. */
+  overflow: hidden;
+  transition: transform 0.14s ease, box-shadow 0.14s ease;
+}
+.cf-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 40px -22px rgb(0 6 93 / 0.45);
+}
+.cf-display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  color: var(--color-navy);
+  letter-spacing: -0.01em;
+}
+
+/* ---- CodeFever styling for the boards, not just the portal ---- */
+.panel {
+  border-radius: 20px; /* CodeFever rounds hard; 20 keeps a floating panel compact */
+}
+.cf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 12.5px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 9px 16px;
+  transition: transform 0.12s ease, background-color 0.12s ease;
+}
+.cf-btn-primary {
+  background: var(--color-lime);
+  color: var(--color-navy);
+}
+.cf-btn-primary:hover:not(:disabled) {
+  background: var(--color-lime-deep);
+  transform: translateY(-1px);
+}
+.cf-btn-ghost {
+  background: #fff;
+  color: var(--color-navy);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-navy) 22%, white);
+}
+.cf-btn-ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-navy) 5%, white);
+}
+.cf-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
