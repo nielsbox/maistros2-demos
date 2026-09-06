@@ -4,6 +4,7 @@ import RegressieLab from './demos/RegressieLab'
 import TekenDeLijn from './demos/TekenDeLijn'
 import HoeGoedPastDeLijn from './demos/HoeGoedPastDeLijn'
 import DataDokter from './demos/DataDokter'
+import KijkInDeQTabel from './demos/KijkInDeQTabel'
 
 export default function App() {
   return (
@@ -16,11 +17,13 @@ export default function App() {
         <Route path="/les1/hoe-goed-past-de-lijn" element={<HoeGoedPastDeLijn />} />
         {/* les 2 */}
         <Route path="/les2/data-dokter" element={<DataDokter />} />
+        {/* les 12 */}
+        <Route path="/les12/kijk-in-de-q-tabel" element={<KijkInDeQTabel />} />
         {/*
           Een ingetrokken bord laat een link achter op een slide of in een oude
-          bookmark. Zonder vangnet geeft Netlify hier 200 met een lege pagina,
+          bookmark. Zonder vangnet geeft de host hier 200 met een lege pagina,
           en dat leest voor een leerling als "het is stuk". Stuur ze naar de
-          overzichtspagina, waar de vier borden staan.
+          overzichtspagina, waar alle borden staan.
         */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

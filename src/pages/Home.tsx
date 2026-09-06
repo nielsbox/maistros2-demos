@@ -54,6 +54,20 @@ const LESSONS: Lesson[] = [
       },
     ],
   },
+  {
+    les: 'Les 12',
+    titel: 'Q-learning',
+    tint: 'var(--color-sky)',
+    demos: [
+      {
+        to: '/les12/kijk-in-de-q-tabel',
+        title: 'Kijk in de q-tabel',
+        soort: 'simulator',
+        doel: 'De agent leert eerst bij de schat',
+        doen: 'Zet één stap en kijk welk getal in de q-tabel verandert. Train daarna 500 episodes. De vakjes bij de schat kennen de weg als eerste, de start als laatste. Test op het einde wat de agent geleerd heeft.',
+      },
+    ],
+  },
 ]
 
 export default function Home() {

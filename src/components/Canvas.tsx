@@ -111,10 +111,23 @@ export default function Canvas({
   onViewChange,
   insets,
   onBoardClick,
+  axes = true,
 }: {
   defaultView: View
   xLabel?: string
   yLabel?: string
+  /**
+   * De astekst: de getallen langs de assen en de twee asnamen. Standaard aan,
+   * want elk bord met een grafiek heeft ze nodig.
+   *
+   * Uit voor een bord waar de coördinaten niets betekenen. Op "Kijk in de
+   * q-tabel" is het vlak een raster van 4 bij 12 vakjes met namen, en dan
+   * zegt "2 4 6 8 10 12" langs de onderrand een leerling niets - het waren
+   * bovendien net die getallen die op 900x700 tegen de zoomknoppen aanliepen.
+   * De rasterlijnen, het pannen, het zoomen en het kaderen blijven zoals ze
+   * zijn: dit zet alleen de tekst uit.
+   */
+  axes?: boolean
   children: (s: Scales) => ReactNode
   /**
    * Fires when the student CLICKS empty board rather than dragging it, so a
@@ -595,7 +608,8 @@ export default function Canvas({
           {/* fixed gutter: axis lines + tick labels stay readable */}
           <line x1={padLeft} y1={padTop + ih} x2={padLeft + iw} y2={padTop + ih} stroke="#d5d1e2" />
           <line x1={padLeft} y1={padTop} x2={padLeft} y2={padTop + ih} stroke="#d5d1e2" />
-          {majorX
+          {axes &&
+            majorX
             .filter((t) => scales.sx(t) >= safe.left + 4 && scales.sx(t) <= iw - safe.right - 4)
             .map((t) => (
               <text
@@ -613,7 +627,8 @@ export default function Canvas({
                 {fmt(t)}
               </text>
             ))}
-          {majorY
+          {axes &&
+            majorY
             .filter((t) => scales.sy(t) >= safe.top + 10 && scales.sy(t) <= ih - safe.bottom - 22)
             .map((t) => (
               <text
@@ -631,7 +646,7 @@ export default function Canvas({
                 {fmt(t)}
               </text>
             ))}
-          {xLabel && (
+          {axes && xLabel && (
             <text
               x={iw - safe.right - 14}
               y={ih - safe.bottom - 30}
@@ -647,7 +662,7 @@ export default function Canvas({
             </text>
           )}
           {/* Rotated along the axis: the top-left corner belongs to the Brief panel. */}
-          {yLabel && (
+          {axes && yLabel && (
             <text
               x={iw - safe.right - 8}
               y={safe.top + 16}

@@ -1,6 +1,6 @@
 # mAIstros 2 - interactieve borden
 
-Vier borden bij de lessenreeks **mAIstros 2** (machine learning, leerlingen van 15 tot 17). Ze
+Vijf borden bij de lessenreeks **mAIstros 2** (machine learning, leerlingen van 15 tot 17). Ze
 worden vanuit een slide in FTRPRF Studio geopend, meestal op een beamer, en daarna door de
 leerlingen zelf op hun eigen laptop.
 
@@ -10,6 +10,7 @@ leerlingen zelf op hun eigen laptop.
 | Teken de lijn | trainen is zoeken | `/les1/teken-de-lijn` |
 | Hoe goed past de lijn? | wat de score betekent | `/les1/hoe-goed-past-de-lijn` |
 | Data-dokter | jij beslist welke rijen het model mag gebruiken | `/les2/data-dokter` |
+| Kijk in de q-tabel | de agent leert eerst bij de schat | `/les12/kijk-in-de-q-tabel` |
 
 Eén bord, één doel. Dat doel staat als eerste zin op het bord zelf, want een leerling die via een
 slide binnenkomt ziet de overzichtspagina nooit.
