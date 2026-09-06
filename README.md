@@ -23,20 +23,23 @@ npm run dev
 
 `npm run build` bouwt naar `dist/`. `npm run lint` draait oxlint.
 
-## Deployen op Cloudflare Pages
+## Deployen op Cloudflare Workers
 
-Verbind deze repo met een Pages-project en zet:
+Verbind deze repo met een Workers-project en zet build command `npm run build`. De rest staat in
+`wrangler.jsonc`: de gebouwde bestanden komen uit `dist/`, en `not_found_handling` op
+`single-page-application` geeft elk pad dat geen bestand is `index.html` terug.
 
-| | |
-|---|---|
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-| Node version | 22 (`NODE_VERSION`) |
+Doe dat **niet** met een `_redirects`-regel `/* /index.html 200`. Workers stript zelf `.html` en
+`/index`, ziet daarna zijn eigen resultaat opnieuw, en weigert de regel als een oneindige lus:
 
-`public/_redirects` stuurt elk pad naar `index.html`, want de routes zijn client-side. Zonder dat
-geeft een directe link naar een bord een 404. `public/_headers` zet `X-Content-Type-Options` en
-`Referrer-Policy`, en zet **bewust geen** `X-Frame-Options`: de borden worden in een iframe op
-studio.ftrprf.be getoond.
+```
+Invalid _redirects configuration:
+Line 1: Infinite loop detected in this rule.
+```
+
+`public/_headers` blijft wel gewoon werken. Het zet `X-Content-Type-Options` en `Referrer-Policy`,
+en zet **bewust geen** `X-Frame-Options`: de borden worden in een iframe op studio.ftrprf.be
+getoond.
 
 ## Hoe dit gebouwd is
 

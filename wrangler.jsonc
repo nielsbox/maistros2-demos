@@ -1,0 +1,14 @@
+{
+  // Statische Worker: geen servercode, alleen de gebouwde bestanden uit dist/.
+  "name": "maistros2-demos",
+  "compatibility_date": "2026-09-06",
+  "assets": {
+    "directory": "./dist",
+
+    // De routes van de borden bestaan alleen in de browser, dus elk pad dat
+    // geen bestand is moet index.html krijgen. Op Workers doe je dat HIER, en
+    // niet met een _redirects-regel: die stript zelf .html en /index, ziet
+    // daarna zijn eigen resultaat opnieuw, en wordt geweigerd als oneindige lus.
+    "not_found_handling": "single-page-application"
+  }
+}
