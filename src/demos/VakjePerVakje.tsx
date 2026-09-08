@@ -1050,11 +1050,17 @@ function Bord({
         : `de getallen van cijfer ${cijfer} - klik op een balk`
 
   /** En in het tweede. Eén slot, twee toestanden, geen extra regel: de
-   *  stippellijn bestaat alleen als je verschoven hebt, en het grijze vakje
-   *  is juist in de begintoestand het ding dat uitleg vraagt. */
+   *  stippellijn bestaat alleen als je verschoven hebt, en de grijze pixel
+   *  is juist in de begintoestand het ding dat uitleg vraagt.
+   *
+   *  Hier stond eerst "grijs vakje: die pixel telt bijna niets mee", en dat is
+   *  één begrip met twee woorden in één regel. `vakje` is bovendien het woord
+   *  van les 5 voor een KNOOP van de boom - negen keer in die les, en het bord
+   *  "Bouw de boom" gebruikt het ook zo. Les 4 zegt zelf `pixel`, dus dat is
+   *  hier het enige woord. */
   const bijschriftB = verschoven
     ? 'stippellijn: het beeldje in het midden'
-    : 'grijs vakje: die pixel telt bijna niets mee'
+    : 'grijze pixel: die telt bijna niets mee'
 
   return (
     <>
@@ -1291,7 +1297,19 @@ function Bord({
               width={m.breed}
               height={m.regel}
               fill="transparent"
+              /* Deze regel MOET hier staan, precies zoals Dots in Canvas.tsx
+                 het doet. Zonder haar bereikt de pointerdown ook de svg van
+                 Canvas, en die roept daar setPointerCapture aan. Vanaf dat
+                 moment gaat niet alleen elke pointerup naar die svg, maar ook
+                 de mouseup en de CLICK - gemeten met een echte klik: doel
+                 pointerdown = rect, doel click = svg. Een klik op een balk deed
+                 daardoor niets, en dat is de knop waarmee dit bord van cijfer
+                 wisselt. Onclick in plaats van onPointerUp lost het dus niet
+                 op; alleen de gebeurtenis tegenhouden werkt. Wat het kost: een
+                 sleep die op een balk begint pant het bord niet. Dat is dezelfde
+                 afweging die Dots al maakt. */
               onPointerDown={(e) => {
+                e.stopPropagation()
                 neer.current = { x: e.clientX, y: e.clientY, c }
               }}
               onPointerUp={(e) => {

@@ -578,15 +578,26 @@ function Rijnamen({ scales: s }: { scales: Scales }) {
  * andere merken: op 1024 px staan de rijen 0,0095 tot 0,1013 binnen 73 px van
  * groen 0, en de tekst is 72 px breed. Boven het merk loopt alleen zijn eigen
  * stokje, en dat is precies het merk waar het label bij hoort.
+ *
+ * En het WIJKT, net als de namen van de handvatten hieronder, in plaats van te
+ * verdwijnen. Gemeten: gecentreerd op zijn merk viel dit label op 900x700 weg,
+ * want daar staat de stapel op x = 371 px en begint het vrije vlak op 336 - 5 px
+ * te weinig voor de oude grens van 40. Precies op de beamervloer tekende het
+ * bord dan 70 merken zonder ergens te zeggen dat er 27 op elkaar liggen. Nu
+ * hangt de tekst rechts van zijn merk zodra ze links niet meer past, en links
+ * ervan aan de andere rand.
  */
 function Stapelnaam({ curve, scales: s }: { curve: Curve; scales: Scales }) {
   const cx = s.sx(STAPEL.groen)
-  if (cx < s.safe.left + 40 || cx > s.safe.right - 40) return null
+  // Buiten het vrije vlak is er geen merk om bij te horen; daarbinnen wijkt de
+  // tekst naar de kant waar ze wel past.
+  if (cx < s.safe.left - 4 || cx > s.safe.right + 4) return null
+  const anker = cx < s.safe.left + 40 ? 'start' : cx > s.safe.right - 40 ? 'end' : 'middle'
   return (
     <text
       x={cx}
       y={s.sy(0) - 16}
-      textAnchor="middle"
+      textAnchor={anker}
       fontSize={13}
       fontWeight={700}
       fill={BANDEN[bandVan({ groen: STAPEL.groen, albert: false }, curve)].inkt}

@@ -402,8 +402,18 @@ function VakjeVorm({
   /* Klikken is geen slepen. Waar de leerling neerdrukte wordt hier onthouden
      en in `onClick` vergeleken: verschoof hij meer dan een paar px, dan was
      het een pan van het bord en geen keuze. De tweede klik van een
-     dubbelklik wordt ook genegeerd. Pointerdown wordt NIET tegengehouden,
-     anders kan je niet meer pannen zodra je op een vakje begint. */
+     dubbelklik wordt ook genegeerd.
+
+     Pointerdown MOET hier wel tegengehouden worden, en dat stond er eerst
+     niet. Gemeten met een echte klik op een vakje: de pointerdown komt op de
+     rect aan, maar de CLICK komt aan op de svg van Canvas. Die svg roept op
+     pointerdown namelijk setPointerCapture aan, en vanaf dat moment gaan
+     pointerup, mouseup EN click naar de svg. Een klik op een vakje deed dus
+     niets, en dan blijft altijd de linkse tak gekozen: de leerling kan de
+     rechtse groep nooit splitsen, en juist die twee splitsingen samen zijn de
+     boom van 3 condities en 0 fout. Wat het tegenhouden kost: een sleep die op
+     een vakje begint pant het bord niet. Precies wat Dots in Canvas.tsx ook
+     doet. */
   const neer = useRef<{ x: number; y: number } | null>(null)
 
   return (
@@ -414,6 +424,7 @@ function VakjeVorm({
       style={{ cursor: 'pointer' }}
       className="outline-none"
       onPointerDown={(e) => {
+        e.stopPropagation()
         neer.current = { x: e.clientX, y: e.clientY }
       }}
       onClick={(e) => {
@@ -660,7 +671,12 @@ function LengteAs({
               dan naar de dichtste stop. Dat is niet alleen vriendelijker op een
               aanraakscherm, het dekt ook het gebaar van iemand die indrukt en
               elders lost zonder ertussen te bewegen. Klikken is geen slepen,
-              dus een gebaar dat verschoof wordt genegeerd en pant het bord. */}
+              dus een gebaar dat verschoof wordt genegeerd.
+
+              Ook hier houdt pointerdown de gebeurtenis tegen, om dezelfde
+              gemeten reden als bij een vakje: laat je haar door, dan neemt de
+              svg van Canvas de pointer over en komt de click daar aan in plaats
+              van hier, zodat tikken op de as niets deed. */}
           <rect
             x={AS_X0}
             y={AS_Y - 42}
@@ -669,6 +685,7 @@ function LengteAs({
             fill="transparent"
             style={{ cursor: 'pointer' }}
             onPointerDown={(e) => {
+              e.stopPropagation()
               tik.current = { x: e.clientX, y: e.clientY }
             }}
             onClick={(e) => {
