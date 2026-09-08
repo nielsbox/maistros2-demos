@@ -55,6 +55,50 @@ const LESSONS: Lesson[] = [
     ],
   },
   {
+    les: 'Les 3',
+    titel: 'Classificatie en logistische regressie',
+    tint: 'var(--color-mint)',
+    demos: [
+      {
+        to: '/les3/waar-leg-jij-de-grens',
+        title: 'Waar leg jij de grens?',
+        soort: 'mini-demo',
+        doel: 'Elke grens maakt een andere soort fout',
+        doen: 'Elke rij van de sonardata staat op één as, op de kans die het model haar geeft. Sleep de grens en lees af hoeveel mijnen het model mist en hoeveel valse alarmen het geeft. Er is geen grens die alles wint.',
+      },
+    ],
+  },
+  {
+    les: 'Les 4',
+    titel: 'Cijfers herkennen met MNIST',
+    tint: 'var(--color-peach)',
+    demos: [
+      {
+        /* De route volgt de titel op het bord, niet de bestandsnaam
+           (VakjePerVakje.tsx): `pixel` is het woord van les 4 zelf. */
+        to: '/les4/pixel-per-pixel',
+        title: 'Pixel per pixel',
+        soort: 'mini-demo',
+        doel: 'Eén pixel verschuiven maakt het model slechter',
+        doen: 'Verschuif een handgeschreven cijfer één pixel en kijk hoe zeker het model dan nog is. De teller doet hetzelfde met de beeldjes uit de test set, zodat je ziet dat het niet aan dat ene beeldje ligt.',
+      },
+    ],
+  },
+  {
+    les: 'Les 5',
+    titel: 'Beslissingsbomen',
+    tint: 'var(--color-lime-deep)',
+    demos: [
+      {
+        to: '/les5/waar-legt-de-boom-zijn-grens',
+        title: 'Waar legt de boom zijn grens?',
+        soort: 'mini-demo',
+        doel: 'De boom kijkt maar naar één plek',
+        doen: 'Sleep één punt door het bord. Er staan twee grenzen op: die van de boom en die van het model uit les 1. Het paneel meet van elke grens hoeveel ze verschoof.',
+      },
+    ],
+  },
+  {
     les: 'Les 12',
     titel: 'Q-learning',
     tint: 'var(--color-sky)',
@@ -69,6 +113,21 @@ const LESSONS: Lesson[] = [
     ],
   },
 ]
+
+/* De doelen moeten verschillen, want een leerkracht kiest een bord van deze
+   pagina af. Twee borden met hetzelfde doel zijn niet te kiezen, en dan is er
+   ook één te veel. Alleen in dev, zodat het opvalt zodra iemand een bord
+   toevoegt - de type-annotatie hierboven belooft dit al, maar controleert het
+   niet. Genormaliseerd, anders glipt een verschil in hoofdletter of punt erdoor. */
+if (import.meta.env.DEV) {
+  const doelen = LESSONS.flatMap((l) => l.demos).map((d) =>
+    d.doel.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim(),
+  )
+  const dubbel = doelen.filter((d, i) => doelen.indexOf(d) !== i)
+  if (dubbel.length > 0) {
+    console.error('Twee borden hebben hetzelfde doel op de overzichtspagina:', dubbel)
+  }
+}
 
 export default function Home() {
   return (
@@ -104,8 +163,14 @@ export default function Home() {
                 <Link
                   key={d.to}
                   to={d.to}
+                  /* Een simulator krijgt de volle breedte omdat er meer in
+                     staat. Een bord dat als enige in zijn les staat krijgt ze
+                     ook, want anders blijft de halve rij ernaast leeg: op
+                     1024 px is dat 434 px niets, drie lessen op een rij. Dit
+                     is een keuze over breedte en niet over soort - het
+                     simulator-label hangt nog steeds aan `soort`. */
                   className={`cf-card group flex flex-col ring-1 ring-navy/12 ${
-                    d.soort === 'simulator' ? 'sm:col-span-2' : ''
+                    d.soort === 'simulator' || l.demos.length === 1 ? 'sm:col-span-2' : ''
                   }`}
                 >
                   <span className="h-2 shrink-0" style={{ background: l.tint }} />
