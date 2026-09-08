@@ -58,7 +58,18 @@ const LESSONS: Lesson[] = [
     les: 'Les 3',
     titel: 'Classificatie en logistische regressie',
     tint: 'var(--color-mint)',
+    /* Twee borden in deze les, en ze staan in deze volgorde omdat de tweede
+       verder bouwt op de eerste: eerst zie je waar een kans vandaan komt,
+       daarna knip je die kans door. De doelen mogen dus niet op elkaar lijken -
+       "hoe wordt de kans gemaakt" tegen "wat kost een grens". */
     demos: [
+      {
+        to: '/les3/van-getal-naar-kans',
+        title: 'Van getal naar kans',
+        soort: 'mini-demo',
+        doel: 'Het model maakt van een getal een kans',
+        doen: 'De curve zet de groenwaarde van een rij om in een kans. Sleep haar naar de beste plek en lees de zekerheid af. Laat daarna de computer dezelfde zoektocht doen.',
+      },
       {
         to: '/les3/waar-leg-jij-de-grens',
         title: 'Waar leg jij de grens?',
@@ -76,11 +87,11 @@ const LESSONS: Lesson[] = [
       {
         /* De route volgt de titel op het bord, niet de bestandsnaam
            (VakjePerVakje.tsx): `pixel` is het woord van les 4 zelf. */
-        to: '/les4/pixel-per-pixel',
-        title: 'Pixel per pixel',
+        to: '/les4/wat-telt-elke-pixel-mee',
+        title: 'Wat telt elke pixel mee?',
         soort: 'mini-demo',
-        doel: 'Eén pixel verschuiven maakt het model slechter',
-        doen: 'Verschuif een handgeschreven cijfer één pixel en kijk hoe zeker het model dan nog is. De teller doet hetzelfde met de beeldjes uit de test set, zodat je ziet dat het niet aan dat ene beeldje ligt.',
+        doel: 'Het model gaf elke pixel een getal en telt die op',
+        doen: 'Elke pixel met inkt krijgt een kleur: telt hij voor of tegen het cijfer dat je koos? Tel de rijtjes op en kijk welk cijfer het hoogste totaal haalt. Verschuif het beeldje daarna één pixel en tel opnieuw.',
       },
     ],
   },
@@ -90,11 +101,13 @@ const LESSONS: Lesson[] = [
     tint: 'var(--color-lime-deep)',
     demos: [
       {
-        to: '/les5/waar-legt-de-boom-zijn-grens',
-        title: 'Waar legt de boom zijn grens?',
+        /* Zelfde afspraak als bij les 4: de route volgt de titel op het bord,
+           niet de bestandsnaam (KweekDeBoom.tsx). */
+        to: '/les5/bouw-de-boom',
+        title: 'Bouw de boom',
         soort: 'mini-demo',
-        doel: 'De boom kijkt maar naar één plek',
-        doen: 'Sleep één punt door het bord. Er staan twee grenzen op: die van de boom en die van het model uit les 1. Het paneel meet van elke grens hoeveel ze verschoof.',
+        doel: 'De boom splitst door tot elke groep één klasse is',
+        doen: 'Kies een vakje, kies een kenmerk en sleep de drempel. Splits de groep en lees af hoeveel voorbeelden nog fout staan. Vraag daarna wat de computer op dat vakje zou kiezen.',
       },
     ],
   },
