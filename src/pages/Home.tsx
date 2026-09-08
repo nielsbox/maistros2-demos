@@ -64,7 +64,7 @@ const LESSONS: Lesson[] = [
         title: 'Waar leg jij de grens?',
         soort: 'mini-demo',
         doel: 'Elke grens maakt een andere soort fout',
-        doen: 'Elke rij van de sonardata staat op één as, op de kans die het model haar geeft. Sleep de grens en lees af hoeveel mijnen het model mist en hoeveel valse alarmen het geeft. Er is geen grens die alles wint.',
+        doen: 'Elke rij van de sonardata staat op één as, bij de kans die het model eraan geeft. Sleep de grens en lees af hoeveel mijnen en hoeveel rotsblokken het model mist. Er is geen grens die alles wint.',
       },
     ],
   },

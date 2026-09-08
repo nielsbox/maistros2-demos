@@ -27,7 +27,9 @@
  * de grens, en niet meer het model.
  *
  * ROTSBLOK, NIET STEEN. Geteld over alle slides van les 3 (lesson 4496):
- * `rotsblok` 28 keer, `steen` 0 keer. Eén begrip krijgt in dit project één
+ * `rotsblok` 22 keer in de slide-inhoud (plus 2x in de begeleidersinfo en 2x in de hints),
+ * `steen` 0 keer. Let op: de les zelf zegt daarnaast nog 5 keer `rots` of `rotsen`, dus zij
+ * houdt haar eigen eenwoordregel niet aan - het bord wel. Eén begrip krijgt in dit project één
  * woord over de slides, de hints en de borden heen, dus heet het hier ook
  * rotsblok - ook al is dat een langer woord op een smal bord.
  *

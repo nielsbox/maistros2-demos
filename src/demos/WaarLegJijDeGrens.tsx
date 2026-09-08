@@ -394,12 +394,24 @@ export default function WaarLegJijDeGrens() {
             vorm, zijn eigen woord en zijn eigen getal, dus geen enkele hangt
             aan kleur alleen.
 
-            EEN VORM VOOR ALLE VIER: meervoud + voltooid deelwoord. Het meervoud
-            hoort bij de teller ernaast, en het haalt tegelijk de dubbelzinnigheid
-            uit `mijn` - "3 mijn gemist" leest als het bezittelijk voornaamwoord,
-            "3 mijnen gemist" niet. Eerder mengde dit setje drie deelwoorden met
-            één woordgroep ("vals alarm"), en dat is precies de slordigheid die
-            een leerling ziet zonder ze te kunnen benoemen.
+            EEN VORM VOOR ALLE VIER: zelfstandig naamwoord + voltooid deelwoord.
+            Eerder mengde dit setje drie deelwoorden met één woordgroep
+            ("vals alarm"), en dat is precies de slordigheid die een leerling
+            ziet zonder ze te kunnen benoemen.
+
+            HET GETAL BEPAALT HET MEERVOUD, net als bij de tellingen op het bord
+            zelf. Vast in het meervoud zetten haalt de dubbelzinnigheid uit
+            `mijn` bij hogere getallen - "3 mijn gemist" leest als het
+            bezittelijk voornaamwoord - maar dan staat er bij één "1 mijnen
+            gemist", en dat is geen Nederlands. Alle vier de tellers KOMEN op 1
+            uit, nagerekend over alle 97 standen van de schuifknop: mijnen
+            gemist op 0,40 tot 0,44, rotsblokken gemist op 0,62 tot 0,67,
+            rotsblokken herkend op 0,07 en mijnen herkend op 0,96. Gemeten op
+            0,40 stond er dan tegelijk "1 mijn gemist" op het bord en "1 mijnen
+            gemist" in dit lijstje: één begrip met twee woorden op één scherm.
+            Dus gaat het meervoud hier door dezelfde `meervoud()` als daar, en
+            zeggen de twee altijd hetzelfde. Het label wordt bij één alleen
+            korter, nooit langer, dus het kan niets onder de rand duwen.
 
             EN TWEE WERKWOORDEN VOOR VIER REGELS: herkend als het klopt, gemist
             als het niet klopt. Niet drie, want dan zouden de twee juiste regels
@@ -409,25 +421,30 @@ export default function WaarLegJijDeGrens() {
             verschil tussen de twee fouten zit in het zelfstandig naamwoord, en
             dat is ook precies waar het in het echt in zit. */}
         <ul className="space-y-0.5">
-          <Uitkomstregel vorm="driehoek" kleur={DATA} woord="mijnen herkend" aantal={u.juisteMijn} />
+          <Uitkomstregel
+            vorm="driehoek"
+            kleur={DATA}
+            woord={`${meervoud(u.juisteMijn, 'mijn', 'mijnen')} herkend`}
+            aantal={u.juisteMijn}
+          />
           <Uitkomstregel
             vorm="driehoek"
             kleur={FOUT}
             waas
-            woord="mijnen gemist"
+            woord={`${meervoud(u.gemisteMijn, 'mijn', 'mijnen')} gemist`}
             aantal={u.gemisteMijn}
           />
           <Uitkomstregel
             vorm="vierkant"
             kleur={DATA}
-            woord="rotsblokken herkend"
+            woord={`${meervoud(u.juisteRotsblok, 'rotsblok', 'rotsblokken')} herkend`}
             aantal={u.juisteRotsblok}
           />
           <Uitkomstregel
             vorm="vierkant"
             kleur={FOUT}
             waas
-            woord="rotsblokken gemist"
+            woord={`${meervoud(u.gemistRotsblok, 'rotsblok', 'rotsblokken')} gemist`}
             aantal={u.gemistRotsblok}
           />
         </ul>

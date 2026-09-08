@@ -373,18 +373,33 @@ export default function WaarLegtDeBoomZijnGrens() {
               altijd iets op het bord. Staat het handvat er al, dan is de knop
               uit: een knop die niets doet leest als een bord dat stuk is.
 
-              Alle drie de knoppen van dit paneel staan in de gebiedende wijs,
-              dus ook deze twee: "Begin opnieuw" was een zin en "Ver punt" was
-              een woordgroep die in het Nederlands niet bestaat. */}
+              DEZE TWEE KNOPPEN MOETEN OP ÉÉN REGEL PASSEN, en dat is gemeten,
+              niet gevoeld. Binnenin is dit paneel vanaf 1280 px 306 px breed.
+              "Pak een ver punt" (147 px) en "Pak een punt bij de grens"
+              (208 px) zijn samen 361 px met de tussenruimte erbij, dus drie
+              knoprijen in plaats van twee: 43 px meer paneel. Op 1280x720 zakte
+              daardoor de hele regel "Van de 30 punten houden er 2 deze grens
+              vast." onder de rand - van 10 px eronder naar 53 px - en dat is de
+              enige plek waar dit bord het aantal punten van de strook noemt.
+              Een gebiedende wijs haalt die 306 px niet: "Pak een " is al acht
+              tekens, en er is samen maar ruimte voor 32.
+
+              Daarom noemen deze twee de PLEK waar het handvat naartoe gaat, in
+              dezelfde woorden als de zin eronder: "buiten de strook" en "bij de
+              grens" staan daar ook. Beide zijn een plaatsbepaling, dus het setje
+              heeft één vorm, en beide zijn precies waar - `verst` is het punt
+              dat het verst BUITEN de strook ligt, en `naast` zijn de twee punten
+              die tegen de grens aan liggen. Gemeten zijn ze 150 en 117 px, met
+              de tussenruimte samen 273 px: één regel, met 33 px over. */}
           <Btn
             variant="ghost"
             disabled={!houdtVast && handvat === verst}
             onClick={() => setHandvat(verst)}
           >
-            Pak een ver punt
+            Buiten de strook
           </Btn>
           <Btn variant="ghost" disabled={houdtVast} onClick={() => setHandvat(naast[0] ?? handvat)}>
-            Pak een punt bij de grens
+            Bij de grens
           </Btn>
         </div>
         <p className="mt-1.5 text-[13px] leading-snug text-ink/80">
