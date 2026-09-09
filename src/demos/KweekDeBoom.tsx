@@ -12,20 +12,20 @@ import {
   LENGTE_AS,
   MAX_DIEPTE,
   VOORBEELDEN,
+  WOORDEN,
   aantalBladeren,
   aantalCondities,
+  aantalKlaar,
   besteConditie,
   cartBoom,
   conditieTekst,
   diepteVan,
   drempels,
   exportText,
-  foutVanBoom,
   gelijkspelVakjes,
   grootste,
   isBlad,
-  maakWortel,
-  splitsIds,
+  maakOpening,
   splitsVakje,
   tel,
   vervangVakje,
@@ -42,49 +42,69 @@ import { DATA, DERDE, DERDE_INK, FOUT, INK, MODEL, MUTED, NAVY, RULE } from '../
 /* ------------------------------------------------------------------ *
  * mAIstros 2 - les 5 - Bouw de boom.
  *
- * EEN DOEL: een conditie splitst een groep in twee, en de boom splitst
- * door tot elke groep uit één klasse bestaat. Dit bord gaat dus over hoe
- * het ALGORITME te werk gaat, niet over hoe een getrainde boom zich
- * gedraagt. Dat onderscheid is de reden dat het vorige bord van deze les
- * afgekeurd is: daar mocht je aan de uitvoer van een klaar model prutsen.
+ * EEN DOEL: een conditie splitst een vakje in twee, en de boom herhaalt dat
+ * tot elk vakje één klasse bevat. Dit bord gaat dus over hoe het ALGORITME te
+ * werk gaat, niet over hoe een getrainde boom zich gedraagt. Dat onderscheid
+ * is de reden dat het vorige bord van deze les afgekeurd is: daar mocht je aan
+ * de uitvoer van een klaar model prutsen.
  *
- * De toets die dit bord moet halen: kan een leerling erna in zijn eigen
- * woorden zeggen HOE de boom aan zijn antwoord komt? Wat daar niet aan
- * meehelpt, staat er niet op.
+ * ------------------------------------------------------------------ *
+ * WAT NIELS ZAG, EN WAT ER DAAROM WEG IS (2026-09-09)
+ * ------------------------------------------------------------------ *
  *
- * WAAROM DE BESTANDSNAAM EN DE TITEL VERSCHILLEN. Het bord heet "Bouw de
- * boom", want dat is wat de leerling doet: hij zet condities. De
- * bestandsnaam is ouder dan die titel. Een leerling leest de route en de
- * titel, nooit de bestandsnaam - dezelfde afspraak als bij les 4, waar
- * VakjePerVakje.tsx het bord "Pixel per pixel" tekent.
+ * "Why dont I see a decision tree?" en "Keep it simple stupid, the flow and
+ * interpretation needs to be very clear for a 15 year old". Vier dingen:
+ *
+ * 1. HET BORD OPENDE ZONDER BOOM. Diepte 0, één vakje, en "Splits deze groep"
+ *    stond uit tot je eerst een kenmerk gekozen had. Twee poorten voor het
+ *    onderwerp van het bord, en niemand naast de leerling om te zeggen welke
+ *    knop eerst. Nu opent het met `OPENING` al gezet: een wortel met twee
+ *    kinderen, dus een boom, en precies één volgende zet - kies een kenmerk
+ *    voor het gekozen blad. Waarom die splitsing niet van de leerling kan
+ *    komen, staat gemeten bij `OPENING` in src/lib/boom.ts: geen enkele eerste
+ *    conditie levert een blad met één klasse op.
+ *
+ * 2. HET BORD SPRAK sklearn. Er stond `samples = 20`, `value = [4, 4, 12]` en
+ *    `Kleur <= 0.50` op, met onderaan een blok dat al die notatie uitlegde. Als
+ *    een prent een decoder nodig heeft, is de prent fout. Een vakje zegt nu
+ *    "Materiaal / is plush" en "9 Onbekend wezen"; de Python-notatie is niet
+ *    weg - de les drukt ze zelf af op 2132149 en vraagt op 2224341 "Snap je wat
+ *    hier staat?" - maar ze zit onder de knop "De computer", naast de codering
+ *    die je nodig hebt om ze te lezen. Daar is ze een brug naar het notebook in
+ *    plaats van een raadsel bij de eerste blik.
+ *
+ * 3. HET BORD WEES NAAR EEN GETAL DAT NIET BEWOOG. "Herhaal tot er niets meer
+ *    fout staat", met de fout groot in het paneel - terwijl drie van de vier
+ *    eerste zetten die fout op 8 laten staan. De teller is nu `aantalKlaar`:
+ *    hoeveel voorbeelden in een vakje met één klasse zitten. Dat is de stopregel
+ *    van de boom zelf, het beweegt bij 5 van de 6 mogelijke zetten meteen, en
+ *    het is dezelfde finish: 20 van 20 klaar is nul fout. De getallen staan bij
+ *    `aantalKlaar` in src/lib/boom.ts.
+ *
+ * 4. TWEE WOORDEN VOOR ÉÉN DING. `vakje` en `groep` benoemden dezelfde
+ *    verzameling voorbeelden, en de paneelregel wisselde er zelfs binnen twee
+ *    toestanden tussen. Nu staat er overal `vakje`. `blad` blijft, want dat is
+ *    een ANDER begrip en het woord van de les zelf: een vakje waar geen pijlen
+ *    meer uit vertrekken.
  *
  * DE WOORDEN KOMEN VAN DE LES ZELF, niet van mij:
- *   vakje, conditie, samples, value, class   slide 2224342 en 2224364
+ *   vakje, conditie, class                   slide 2224342 en 2224364
  *   waar / vals (de twee pijlen)             slide 2224342, letterlijk
  *   bladeren, diepte                         slide 2224243
  *   voorbeeld                                33 slides van deze les
  *   Kleur, Materiaal, Lengte, Soort          slide 2132210 en 2132327
- * Twee woordbotsingen zijn met opzet zo beslecht, en ze horen in de
- * woordenlijst van het project:
- *   - `Soort` is hier een KENMERK (haai 0.0 / robot 1.0). Wat de boom
- *     voorspelt heet daarom `klasse`, ook een woord van de les zelf ("de
- *     klasse die bij class staat", 2224342), en nooit `soort`.
+ *   blauw/oranje, plush/metaal, haai/robot   slide 2132210
+ * Twee woordbotsingen zijn met opzet zo beslecht:
+ *   - `Soort` is hier een KENMERK (haai / robot). Wat de boom voorspelt heet
+ *     daarom `klasse`, ook een woord van de les zelf ("de klasse die bij class
+ *     staat", 2224342), en nooit `soort`.
  *   - de woordenlijst zegt `rij` voor één regel data, maar les 5 genereert
- *     wezens en noemt ze `voorbeelden`, en een vakje drukt af hoeveel
- *     voorbeelden erin getest zijn. Op dit bord dus `voorbeeld`.
+ *     wezens en noemt ze `voorbeelden`. Op dit bord dus `voorbeeld`.
  *
- * ALLE GETALLEN KOMEN UIT DE TOESTAND. Er staat geen enkel getal in de
- * copy: de 8 fout bij de start, de vier getallen van jouw boom en de vier
- * van de computerboom worden bij elke tekening opnieuw geteld. Waar die
- * getallen op gemeten zijn, staat in src/lib/boom.ts.
- *
- * PYTHON WORDT GECITEERD, NOOIT VERTAALD. Een drempel staat altijd in een
- * conditie, en dus altijd zoals Python haar afdrukt: `Lengte <= 53.04`, met
- * een punt. Elk getal dat het bord in zijn EIGEN woorden zegt (fout,
- * condities, bladeren, diepte, samples) is een heel getal en gaat door
- * `getal()`. Zo staat hetzelfde getal nergens twee keer anders
- * opgeschreven, en is de prent op het bord karakter voor karakter de prent
- * uit het notebook.
+ * ALLE GETALLEN KOMEN UIT DE TOESTAND. Er staat geen enkel getal in de copy:
+ * de teller, de vier getallen van jouw boom en de vier van de computerboom
+ * worden bij elke tekening opnieuw geteld. Elk geheel getal gaat door
+ * `getal()`, en een lengte door `getal(cm, 1)`, dus met een komma.
  * ------------------------------------------------------------------ */
 
 /* --------------------------- de meetkunde --------------------------- *
@@ -95,10 +115,10 @@ import { DATA, DERDE, DERDE_INK, FOUT, INK, MODEL, MUTED, NAVY, RULE } from '../
  * vakjes bij uitzoomen over elkaar terwijl 13 px 13 px blijft. Nu schaalt
  * alles samen, dus overlappen kan niet.
  *
- * Het venster is de MAXIMALE boom, van de eerste tel af: vier vakjes breed
- * en vier rijen diep, met de lengte-as eronder. Zo verandert de schaal niet
- * terwijl de leerling bouwt. Een boom die bij elke splitsing zijn eigen
- * schaal verzet, herkadert het bord midden in een beweging.
+ * Het venster is de MAXIMALE boom, van de eerste tel af: vier bladeren breed
+ * en drie rijen diep, met de lengte-as erboven. Zo verandert de schaal niet
+ * terwijl de leerling bouwt. Een boom die bij elke splitsing zijn eigen schaal
+ * verzet, herkadert het bord midden in een beweging.
  *
  * De breedte is GEMETEN en niet gekozen: vier vakjes van 124 px met 8 px
  * ertussen is 520 px, en op een beamer van 900 px laat Canvas naast de twee
@@ -106,9 +126,10 @@ import { DATA, DERDE, DERDE_INK, FOUT, INK, MODEL, MUTED, NAVY, RULE } from '../
  * ruimer en het vierde blad valt van het beeld op de smalste beamer. Wie
  * aan VAK_W, GAT of de paneelbreedte raakt, maakt die som opnieuw.
  *
- * De hoogte volgt dezelfde som: bij 900x700 laat Canvas 626 px vrij en bij
- * 1024x768 694 px, dus het venster mag niet hoger zijn dan ongeveer 600 px
- * of de tekst zakt onder de 13 px.                                       */
+ * De hoogte is ruimer dan nodig en daarom niet bindend: 460 px tegen de 626 px
+ * die Canvas op 900x700 vrijlaat. De schaal wordt dus door de BREEDTE bepaald,
+ * op elke beamermaat. Dat is met opzet: hoogte over hebben kost niets, breedte
+ * over hebben zou de tekst onder 13 px duwen.                            */
 
 const VAK_W = 124
 const GAT = 8
@@ -118,19 +139,16 @@ const BOXW = 4 * PITCH - GAT
 /** Ruimte boven een rij voor het woord "gekozen", dat boven een vakje hangt. */
 const TAB_H = 16
 /** Hoogte van een rij: het vakje plus de ruimte voor de twee pijlen. */
-const RIJ_H = 124
-const VAK_H_SPLIT = 75
-const VAK_H_BLAD = 104
+const RIJ_H = 112
+const VAK_H_SPLIT = 78
+const VAK_H_BLAD = 112
 
-/* De lengte-as staat BOVEN de boom, en dat is met opzet.
- *
- * Het venster is even hoog als de diepste boom die je kan bouwen, dus bij de
- * start staat er onder de wortel veel lege ruimte. Stond de as onderaan, dan
+/* De lengte-as staat BOVEN de boom, en dat is met opzet: bij de start staat er
+ * onder de wortel lege ruimte waar de boom in groeit. Stond de as onderaan, dan
  * lag die leegte tussen de twee dingen die de leerling nodig heeft en las het
- * bord als twee losse helften - op 1024x768 zat er 400 px niets tussen. Nu
- * staan de as en het gekozen vakje bij de start naast elkaar, en groeit de
- * boom de vrije ruimte in. */
-const AS_Y = 57
+ * bord als twee losse helften. Nu staan de as en het gekozen vakje bij de start
+ * boven elkaar, met de pijlen ertussen. */
+const AS_Y = 55
 /** Hoogte van de hele band met de as erin. */
 const AS_H = 108
 const BOOM_TOP = AS_H + TAB_H
@@ -144,7 +162,7 @@ const VENSTER: View = { x0: 0, x1: BOXW, y0: 0, y1: BOXH }
 
 /** Waar rij `d` begint. */
 const rijTop = (d: number) => BOOM_TOP + d * RIJ_H
-/** Een blad heeft twee regels extra voor zijn klasse. */
+/** Een blad heeft regels extra voor zijn klassen en zijn toestand. */
 const vakHoogte = (v: Vakje) => (isBlad(v) ? VAK_H_BLAD : VAK_H_SPLIT)
 /** Waar een lengte in cm op de as staat. */
 const asX = (cm: number) =>
@@ -213,15 +231,23 @@ const padSleutel = (p: Pad) => p.join('/') || 'wortel'
 const zelfdePad = (a: Pad, b: Pad) => a.length === b.length && a.every((s, i) => s === b[i])
 
 /* ------------------------------ merken ------------------------------ *
- * Elke klasse heeft een eigen VORM en een eigen kleur, en haar naam staat
- * er altijd bij. Drie dragers, dus nooit kleur alleen.
+ * Elke klasse heeft een eigen VORM en een eigen kleur, en haar naam staat er
+ * altijd bij. Drie dragers, dus nooit kleur alleen.
+ *
+ * ER IS GEEN LEGENDE MEER, en dat is geen bezuiniging maar een gevolg. Elk
+ * blad noemt zijn klassen bij naam, met het merk ernaast, en samen bevatten de
+ * bladeren altijd alle twintig voorbeelden. Elke klasse die ergens op het bord
+ * als merk staat, staat dus ook ergens met haar naam. Een aparte legende zou
+ * datzelfde werk een tweede keer doen, en de vorige versie had die legende in
+ * het scrollvak van het paneel, waar op 900x700 maar één van de drie regels
+ * boven de rand stond.
  *
  * Geen groen voor de derde klasse: groen tegen het gebrande oranje van FOUT
  * zakt onder protanopie naar dE 4,0. Onbekend wezen wordt daarom een OPEN
  * ruit in de huisnavy - een andere vorm en een andere vulling, geen derde
  * tint. Dat het oranje op dit bord de klasse Albert betekent en niet
  * "misser", is een keuze voor dit bord: er staat hier geen enkele misser als
- * merk op het bord, alleen als geteld getal in het paneel.                */
+ * merk op het bord.                                                       */
 
 const KLEUR: Record<Klasse, string> = {
   Albert: FOUT,
@@ -257,23 +283,15 @@ function Merk({
   )
 }
 
-/** Hetzelfde merk in het paneel, waar het naast zijn naam staat. */
-function MerkHTML({ klasse }: { klasse: Klasse }) {
-  return (
-    <svg width={14} height={14} viewBox="0 0 14 14" aria-hidden className="shrink-0">
-      <Merk klasse={klasse} cx={7} cy={7} maat={4.5} />
-    </svg>
-  )
-}
-
 /**
- * De strip in een vakje: `value` als beeld. Drie stukken naar rato van de
- * drie getallen, altijd in dezelfde volgorde als `value` zelf. Eén vol stuk
- * betekent dus één klasse, gestreept betekent gemengd.
+ * De strip in een vakje: de verdeling als beeld. Drie stukken naar rato van de
+ * drie aantallen, altijd in dezelfde volgorde. Eén vol stuk betekent dus één
+ * klasse, gestreept betekent gemengd.
  *
- * Dit is de plaats waar op de prent van de les gini zou staan - en de les
- * heeft gini er zelf uit gehaald (`impurity=False` in beide plot_tree-
- * aanroepen). Er staat dus geen score in een vakje, alleen de verdeling.
+ * Dit is de plaats waar op de prent van de les gini zou staan - en de les heeft
+ * gini er zelf uit gehaald (`impurity=False` in beide plot_tree-aanroepen). Er
+ * staat dus geen score in een vakje, alleen de verdeling. De aantallen zelf
+ * staan er in cijfers bij, in een blad met de klassenaam erbij.
  */
 function Strip({
   ids,
@@ -357,31 +375,69 @@ function Tekst({
   )
 }
 
-/** `value = [4, 4, 12]`, letterlijk zoals een vakje het afdrukt. */
-const valueTekst = (ids: readonly number[]) => `value = [${tel(ids).join(', ')}]`
+/* ------------------------- een vakje in woorden --------------------- */
 
 /**
- * Een klassenaam die in een vakje past, over maximaal twee regels.
+ * Wat een gesplitst vakje op zijn twee eerste regels zegt: het kenmerk, en wat
+ * het test - in de woorden van de les, niet in de notatie van sklearn.
  *
- * "Onbekend wezen" is 14 tekens en de binnenkant van een vakje is 102 px
- * breed; op één regel loopt die naam tegen de rand. Afkorten mag niet - een
- * klasse houdt haar naam - dus breekt hij op de spatie.
+ * Waarom het op TWEE regels staat: de binnenkant van een vakje is 108 px en
+ * "Materiaal is plush" haalt 13 px vet niet op één regel. Twee korte regels
+ * lezen bovendien als een vraag met een antwoord eronder.
+ *
+ * `is plush` en niet `is niet metaal`: `splitsIds` zet `waarde <= drempel`
+ * links, en bij een kenmerk met twee waarden is dat de waarde 0 - het eerste
+ * woord in `WOORDEN`. De pijl naar links heet `waar`, dus links staat wat er
+ * hier staat.
+ *
+ * Bij Lengte staat er een getal met een eenheid: `< 53,0 cm`. Met een komma,
+ * want dat is een getal dat het bord zelf opschrijft. `<` en niet `<=`, en dat
+ * is exact: een drempel ligt altijd MIDDEN tussen twee lengtes die echt
+ * voorkomen, dus geen enkel voorbeeld staat er precies op.
  */
-function inRegels(naam: string, maxTekens = 12): string[] {
-  const regels: string[] = []
-  let huidig = ''
-  for (const w of naam.split(' ')) {
-    const kandidaat = huidig ? `${huidig} ${w}` : w
-    if (kandidaat.length > maxTekens && huidig) {
-      regels.push(huidig)
-      huidig = w
-    } else {
-      huidig = kandidaat
-    }
-  }
-  if (huidig) regels.push(huidig)
-  return regels.slice(0, 2)
+function conditieRegels(c: Conditie): [string, string] {
+  const woorden = WOORDEN[c.kenmerk]
+  if (woorden) return [KENMERKEN[c.kenmerk], `is ${woorden[0]}`]
+  return [KENMERKEN[c.kenmerk], `< ${getal(c.drempel, 1)} cm`]
 }
+
+type KlasseTelling = { klasse: Klasse; aantal: number; naam: string[] }
+
+/**
+ * Wat er in een blad staat: per klasse die erin zit, het aantal en de naam.
+ * "4 Blahaj", "9 Onbekend wezen".
+ *
+ * DIT IS DE VERVANGING VAN `value = [4, 4, 12]`. Een leerling leest hier namen
+ * en aantallen in plaats van een rijtje dat hij eerst moet decoderen, en de
+ * volgorde is nog altijd die van `KLASSEN`, dus dezelfde als die van `value`
+ * in zijn notebook. Klassen met nul voorbeelden staan er niet: een blad zegt
+ * wat erin zit, niet wat er niet in zit.
+ *
+ * DRIE KOLOMMEN, en die staan vast: het merk, het aantal, de naam. Gemeten in
+ * de echte letter van het bord (Hanken Grotesk): "9 Onbekend wezen" is 111,5 px
+ * op 13 px vet, en de binnenkant van een vakje is 108 px. Die naam moet dus
+ * breken, en dan is een vaste naamkolom het verschil tussen "9 Onbekend /
+ * wezen" - wat als twee losse dingen leest - en een naam die netjes onder
+ * zichzelf doorloopt. Afkorten mag niet: een klasse houdt haar naam, en
+ * "Onbekend" alleen zou een tweede woord voor dezelfde klasse zijn.
+ *
+ * Breder maken kon niet. Op 900x700 laat Canvas 538 px vrij (nagemeten in de
+ * browser, k = 1,0346 bij BOXW 520), dus vier bladeren van 132 px zouden de
+ * schaal onder 1 duwen en alle tekst onder 13 px.
+ */
+function klasseTellingen(ids: readonly number[]): KlasseTelling[] {
+  const c = tel(ids)
+  const uit: KlasseTelling[] = []
+  KLASSEN.forEach((klasse, i) => {
+    if (c[i] === 0) return
+    uit.push({ klasse, aantal: c[i], naam: klasse.split(' ') })
+  })
+  return uit
+}
+
+/** De toestand van een blad, uitgeschreven. Dit is precies wat de teller in
+ *  het paneel telt, dus het staat er met dezelfde woorden. */
+const bladStaat = (ids: readonly number[]) => (zuiver(ids) ? 'één klasse' : 'gemengd')
 
 /* ------------------------------ het vakje --------------------------- */
 
@@ -399,6 +455,7 @@ function VakjeVorm({
   const klasse = grootste(vakje.ids)
   const c = tel(vakje.ids)
   const zuiverheid = vakje.ids.length === 0 ? 0 : Math.max(...c) / vakje.ids.length
+  const regels = vakje.conditie ? conditieRegels(vakje.conditie) : null
 
   /* Klikken is geen slepen. Waar de leerling neerdrukte wordt hier onthouden
      en in `onClick` vergeleken: verschoof hij meer dan een paar px, dan was
@@ -410,18 +467,18 @@ function VakjeVorm({
      rect aan, maar de CLICK komt aan op de svg van Canvas. Die svg roept op
      pointerdown namelijk setPointerCapture aan, en vanaf dat moment gaan
      pointerup, mouseup EN click naar de svg. Een klik op een vakje deed dus
-     niets, en dan blijft altijd de linkse tak gekozen: de leerling kan de
-     rechtse groep nooit splitsen, en juist die twee splitsingen samen zijn de
-     boom van 3 condities en 0 fout. Wat het tegenhouden kost: een sleep die op
-     een vakje begint pant het bord niet. Precies wat Dots in Canvas.tsx ook
-     doet. */
+     niets, en dan blijft altijd de linkse tak gekozen: de leerling kan het
+     rechtse vakje nooit splitsen, en juist die twee splitsingen samen zijn de
+     boom van 3 condities en 20 van 20 klaar. Wat het tegenhouden kost: een
+     sleep die op een vakje begint pant het bord niet. Precies wat Dots in
+     Canvas.tsx ook doet. */
   const neer = useRef<{ x: number; y: number } | null>(null)
 
   return (
     <g
       role="button"
       tabIndex={0}
-      aria-label={`vakje met ${vakje.ids.length} voorbeelden, klasse ${klasse}`}
+      aria-label={`vakje met ${vakje.ids.length} ${meervoud(vakje.ids.length, 'voorbeeld', 'voorbeelden')}, ${bladStaat(vakje.ids)}`}
       style={{ cursor: 'pointer' }}
       className="outline-none"
       onPointerDown={(e) => {
@@ -442,8 +499,8 @@ function VakjeVorm({
       }}
     >
       {/* De vulling volgt `filled=True` uit de les: de kleur van de grootste
-          klasse, sterker als de groep zuiverder is. Ze zegt niets wat er niet
-          ook in cijfers staat - de strip en `value` doen dat werk. */}
+          klasse, sterker als het vakje zuiverder is. Ze zegt niets wat er niet
+          ook in cijfers staat - de strip en de klassenregels doen dat werk. */}
       <rect
         x={x}
         y={y}
@@ -464,37 +521,64 @@ function VakjeVorm({
         </Tekst>
       )}
 
-      {vakje.conditie && (
-        <Tekst x={x + 8} y={y + 20}>
-          {conditieTekst(vakje.conditie)}
-        </Tekst>
+      {/* Een gesplitst vakje: de conditie in woorden, het aantal, de strip. Niet
+          de aantallen per klasse - die staan in de bladeren eronder, en samen
+          zijn de bladeren dit vakje. */}
+      {regels && (
+        <>
+          <Tekst x={x + 8} y={y + 20} maat={14}>
+            {regels[0]}
+          </Tekst>
+          <Tekst x={x + 8} y={y + 37} maat={14}>
+            {regels[1]}
+          </Tekst>
+          <Tekst x={x + 8} y={y + 55} dik={600} kleur={MUTED}>
+            {`${getal(vakje.ids.length)} ${meervoud(vakje.ids.length, 'voorbeeld', 'voorbeelden')}`}
+          </Tekst>
+          <Strip ids={vakje.ids} x={x + 8} y={y + 61} w={VAK_W - 16} h={11} />
+        </>
       )}
-      {blad && (
-        <Tekst x={x + VAK_W - 8} y={y + 20} kleur={MUTED} anker="end">
-          blad
-        </Tekst>
-      )}
 
-      <Tekst x={x + 8} y={y + 37} dik={600}>
-        {`samples = ${vakje.ids.length}`}
-      </Tekst>
-      <Tekst x={x + 8} y={y + 54} dik={600}>
-        {valueTekst(vakje.ids)}
-      </Tekst>
-
-      <Strip ids={vakje.ids} x={x + 8} y={y + 60} w={VAK_W - 16} h={9} />
-
-      {/* Een blad draagt zijn klasse, want dat is het antwoord van de boom.
-          De naam mag over twee regels, en die plaats wordt in elk blad
-          gehouden, zodat alle bladeren even hoog blijven. */}
+      {/* Een blad: het aantal, de strip, wat erin zit, en of het klaar is. De
+          plaats van elke regel staat vast, ook als er minder klassen in zitten,
+          zodat alle bladeren er hetzelfde uitzien en de leerling in één blik
+          kan zien welke "één klasse" zeggen. */}
       {blad && (
         <>
-          <Merk klasse={klasse} cx={x + 14} cy={y + 82} />
-          {inRegels(klasse).map((regel, i) => (
-            <Tekst key={regel} x={x + 25} y={y + 87 + i * 15} maat={13.5}>
-              {regel}
-            </Tekst>
-          ))}
+          <Tekst x={x + 8} y={y + 19} dik={600} kleur={MUTED}>
+            {`${getal(vakje.ids.length)} ${meervoud(vakje.ids.length, 'voorbeeld', 'voorbeelden')}`}
+          </Tekst>
+          <Strip ids={vakje.ids} x={x + 8} y={y + 25} w={VAK_W - 16} h={12} />
+          {(() => {
+            /* De regelteller loopt door over de klassen heen, want een naam van
+               twee woorden neemt twee regels. Drie regels is het maximum in
+               deze data: twee klassen, waarvan één met een naam die breekt. */
+            let regel = 0
+            return klasseTellingen(vakje.ids).map((telling) => {
+              const eersteRegel = regel
+              const rijen = telling.naam.map((woord, w) => {
+                const yy = y + 58 + (eersteRegel + w) * 16
+                return (
+                  <Tekst key={woord} x={x + 40} y={yy} maat={13.5}>
+                    {woord}
+                  </Tekst>
+                )
+              })
+              regel += telling.naam.length
+              return (
+                <g key={telling.klasse}>
+                  <Merk klasse={telling.klasse} cx={x + 14} cy={y + 53.5 + eersteRegel * 16} maat={4.5} />
+                  <Tekst x={x + 22} y={y + 58 + eersteRegel * 16} maat={13.5}>
+                    {getal(telling.aantal)}
+                  </Tekst>
+                  {rijen}
+                </g>
+              )
+            })
+          })()}
+          <Tekst x={x + 8} y={y + 104} kleur={zuiver(vakje.ids) ? DERDE_INK : INK}>
+            {bladStaat(vakje.ids)}
+          </Tekst>
         </>
       )}
     </g>
@@ -527,258 +611,35 @@ function Pijlen({ ouder, kind, woord }: { ouder: Kader; kind: Kader; woord: 'waa
   )
 }
 
-/* ------------------------- het voorbeeldvakje ----------------------- *
- * Wat je zou krijgen: de conditie, en de twee groepen met hun samples en
- * hun value. Het staat op de plaats waar de twee echte vakjes komen, en daar
- * kan het niets overdekken: je splitst alleen een blad, en onder een blad
- * hangt niets.
- *
- * Twee toestanden, op dezelfde plaats, elk met hun eigen woord erboven: jouw
- * conditie, of die van de computer. Dat ze elkaar afwisselen op één plek is
- * met opzet - zo lees je het verschil af zonder je ogen te verplaatsen.
- * Naast elkaar kon niet: twee van deze vakjes zijn 248 px en een kolom is
- * 124 px breed, dus het tweede zou over de buurkolom vallen.               */
-
-const VOORB_H = 100
-
-function VoorbeeldVakje({
-  kader,
-  conditie,
-  kleur,
-  woord,
-}: {
-  kader: Kader
-  conditie: Conditie
-  kleur: string
-  woord: string
-}) {
-  const { waar, vals } = splitsIds(kader.vakje.ids, conditie)
-  const x = kader.x
-  const y = rijTop(kader.diepte + 1)
-  return (
-    <g pointerEvents="none">
-      <Tekst x={x + 2} y={y - 6} kleur={kleur}>
-        {woord}
-      </Tekst>
-      <rect
-        x={x}
-        y={y}
-        width={VAK_W}
-        height={VOORB_H}
-        rx={8}
-        fill="#fff"
-        fillOpacity={0.92}
-        stroke={kleur}
-        strokeWidth={2}
-        strokeDasharray="5 4"
-      />
-      <Tekst x={x + 8} y={y + 20} kleur={kleur}>
-        {conditieTekst(conditie)}
-      </Tekst>
-
-      {/* Alleen `value`, en geen `samples` erbij. Gemeten: "waar" naast
-          "samples = 10" is 107 px en de binnenkant van een vakje is 102 px
-          breed, dus die twee liepen over elkaar. Het is ook geen verlies: de
-          les zegt zelf dat samples de som van de drie getallen uit value is
-          (slide 2224342), en in de echte vakjes eronder staan beide. */}
-      <Tekst x={x + 8} y={y + 40}>
-        waar
-      </Tekst>
-      <Tekst x={x + 8} y={y + 56} dik={600}>
-        {valueTekst(waar)}
-      </Tekst>
-
-      <Tekst x={x + 8} y={y + 77}>
-        vals
-      </Tekst>
-      <Tekst x={x + 8} y={y + 93} dik={600}>
-        {valueTekst(vals)}
-      </Tekst>
-    </g>
-  )
-}
-
-/* -------------------------- het openingsverhaal --------------------- *
- * WAAROM DIT BESTAAT. Les 3, 4 en 5 worden alleen gestudeerd: er staat
- * niemand naast de leerling om "sleep dat" of "kijk naar de balkjes" te
- * zeggen. Niels ving dat op het bord van les 4: "Ik mis wat context of
- * verhaal van deze demo, of staat het duidelijk in de slides?"
- *
- * Voor les 5 staat een deel WEL in de slides - 2224342 legt vakje, conditie,
- * samples, value en de twee pijlen uit - maar drie dingen staan er nergens:
- * dat JIJ hier de condities zet, waar je moet klikken, en dat je het tegen de
- * boom van de computer opneemt. Die drie staan hieronder, in de volgorde van
- * de vijfsecondentoets: wat zie ik, wat doe ik eerst, waar let ik op.
- *
- * WAAROM OP HET BORD EN NIET IN EEN PANEEL. Gemeten op 900x700: het
- * knoppenpaneel is 508 px hoog en de tweede computerknop eindigt op px 636,
- * exact de onderrand van zijn scrollvak. Daar is geen regel meer bij te
- * zetten zonder een knop van het paneel te duwen. Het bord heeft bij de start
- * 350 px lege hoogte onder de wortel - precies de ruimte die de boom straks
- * zelf inneemt. Het verhaal staat dus in de ruimte die het vrijgeeft zodra
- * het niet meer nodig is, en het herkadert niets: het venster staat vast.
- *
- * TWEE BLOKKEN MET EEN EIGEN LEVENSDUUR, en dat is meetkunde en geen smaak.
- *   - Het VERHAAL staat op y 252..462 en gaat weg bij de eerste kenmerkklik.
- *     Het moet weg: het voorbeeldvakje komt dan op y 248..348 in de
- *     middenkolom te staan en zou eroverheen vallen. Dat de klik iets
- *     zichtbaar doet, is meteen ook de bedoeling.
- *   - De twee SLEUTELS staan op y 482..570, onder het voorbeeldvakje, en
- *     blijven tot de eerste splitsing. Ze zijn geen inleiding maar naslag:
- *     zonder de value-sleutel is `value = [4, 4, 12]` drie getallen zonder
- *     namen, en zonder de kenmerksleutel is `Kleur <= 0.50` onleesbaar.
- *
- * Geen enkel getal hieronder staat in de tekst: 20, 8, 4, 4, 12, 3 en 4
- * worden alle zeven doorgegeven vanuit de toestand van het bord.
- */
-
-/** Waar het verhaal begint. Onder de wortel (die eindigt op y 228) en boven
- *  het voorbeeldvakje, dat nooit samen met het verhaal op het bord staat. */
-const OP_X = 8
-const OP_REGEL = 22
-
-function Streep({ y }: { y: number }) {
-  return <line x1={OP_X} y1={y} x2={BOXW - OP_X} y2={y} stroke={RULE} strokeWidth={1} />
-}
-
-function Verhaal({
-  fout,
-  klasse,
-  cartCondities,
-}: {
-  fout: number
-  klasse: Klasse
-  cartCondities: number
-}) {
-  const n = VOORBEELDEN.length
-  /* Vier zinnen, elk één idee. De derde en de vierde horen bij elkaar: de
-     derde zegt hoeveel er fout staan, de vierde zegt waarom splitsen daar iets
-     aan doet. Zonder die vierde is "maak de groep zuiverder" een opdracht
-     zonder reden - en dat was de vraag die dit bord niet beantwoordde. */
-  const zinnen = [
-    `Alles zit nu in één vakje.`,
-    `Dat vakje voorspelt voor alle ${getal(n)} dezelfde klasse: ${klasse}.`,
-    `${getal(fout)} van de ${getal(n)} staan daardoor fout.`,
-    `Een groep met één klasse maakt geen fout.`,
-  ]
-  const stappen = [
-    `Kies links een kenmerk.`,
-    `Klik op Splits deze groep.`,
-    `Herhaal tot fout op 0 staat.`,
-  ]
-  return (
-    <g pointerEvents="none">
-      <Tekst x={OP_X} y={252} maat={13} kleur={DERDE_INK}>
-        Zo begin je
-      </Tekst>
-      {zinnen.map((zin, i) => (
-        <Tekst key={zin} x={OP_X} y={276 + i * OP_REGEL} maat={13.5} dik={600}>
-          {zin}
-        </Tekst>
-      ))}
-      <Streep y={358} />
-      {stappen.map((stap, i) => (
-        <g key={stap}>
-          <Tekst x={OP_X} y={378 + i * OP_REGEL} maat={13.5} kleur={DERDE_INK}>
-            {`${i + 1}`}
-          </Tekst>
-          <Tekst x={OP_X + 16} y={378 + i * OP_REGEL} maat={13.5} dik={600}>
-            {stap}
-          </Tekst>
-        </g>
-      ))}
-      {/* De uitdaging, en de enige plaats waar ze staat. Gemeten in
-          src/lib/boom.ts: met drie condities kan het hier foutloos, en sklearn
-          heeft er vier nodig omdat hij één conditie vooruit kijkt. */}
-      <Tekst x={OP_X} y={444} maat={13} dik={600} kleur={MUTED}>
-        {`Jij mag ${getal(BUDGET)} condities zetten. De computer heeft er ${getal(cartCondities)} nodig.`}
-      </Tekst>
-      <Streep y={462} />
-    </g>
-  )
-}
-
-/** De twee sleutels: hoe je `value` leest, en wat de getallen van een kenmerk
- *  betekenen. Naslag, geen inleiding - daarom blijven ze staan als het
- *  verhaal al weg is. */
-function Sleutels() {
-  const c = tel(ALLE_IDS)
-  /* De drie klassen naast elkaar, op vaste x. Gemeten in een bordkolom van
-     520 px: "12 Onbekend wezen" is het langste label (124 px), dus de derde
-     kolom mag op 352 beginnen en eindigt op 490. */
-  const kolommen = [OP_X, 180, 352]
-  /* 12 px LAGER dan waar dit blok stond, en dat is een meting.
-     De sleutels blijven nu staan tot de boom twee diep is (zie `toonSleutels`
-     in Bord). Een blad op rij 2 loopt van y 372 tot 476, en de kopregel stond
-     met haar bovenkant op 471: gezien in de browser op 900x700 dekte dat vakje
-     de onderste 7 px van "in value = [4, 4, 12] staat:" af, en die regel las
-     als doorgestreept. Met 12 px erbij begint ze op 483, dus 7 px onder dat
-     blad. Onderaan is er ruimte genoeg: de laatste kenmerkregel eindigt dan op
-     y 586 en het venster is 600 px hoog. */
-  return (
-    <g pointerEvents="none" transform="translate(0 12)">
-      <Tekst x={OP_X} y={482} maat={13} kleur={MUTED}>
-        {`in ${valueTekst(ALLE_IDS)} staat:`}
-      </Tekst>
-      {KLASSEN.map((klasse, i) => (
-        <g key={klasse}>
-          <Merk klasse={klasse} cx={kolommen[i] + 6} cy={498} maat={5} />
-          <Tekst x={kolommen[i] + 17} y={503} maat={13} dik={600}>
-            {`${getal(c[i])} ${klasse}`}
-          </Tekst>
-        </g>
-      ))}
-
-      <Tekst x={OP_X} y={528} maat={13} kleur={MUTED}>
-        elk kenmerk is een getal:
-      </Tekst>
-      {KENMERKEN.map((naam, i) => {
-        /* Twee rijen van twee. Eén kolom van vier zou tot y 616 lopen en het
-           venster is 600 px hoog; twee naast elkaar past wel, want de langste
-           cel is "Materiaal" (66 px) plus "0 plush, 1 metaal" (124 px). */
-        const x = i % 2 === 0 ? OP_X : 268
-        const y = 548 + Math.floor(i / 2) * OP_REGEL
-        return (
-          <g key={naam}>
-            <Tekst x={x} y={y} maat={13} dik={600}>
-              {naam}
-            </Tekst>
-            <Tekst x={x + 84} y={y} maat={13} dik={600} kleur={MUTED}>
-              {CODERING[i]}
-            </Tekst>
-          </g>
-        )
-      })}
-    </g>
-  )
-}
-
 /* ---------------------------- de lengte-as -------------------------- *
- * De lengtes van de gekozen groep op één lijn, elk met het merk van zijn
- * klasse, en het handvat ertussen. Zo zie je waarom een drempel de groep
- * scheidt: links van het handvat staan andere merken dan rechts.
+ * De lengtes van het gekozen vakje op één lijn, elk met het merk van zijn
+ * klasse. Zo zie je waarom een drempel een vakje scheidt: links van het
+ * handvat staan andere merken dan rechts.
  *
- * De band staat er ALTIJD, ook als er nog geen kenmerk gekozen is. Ze zegt
- * dan wat je moet doen. Een as die pas na een klik opduikt, zou het bord
- * opnieuw kaderen terwijl de leerling ernaar kijkt.
+ * De band staat er ALTIJD, ook zonder handvat. Een as die pas na een klik
+ * opduikt, zou het bord opnieuw kaderen terwijl de leerling ernaar kijkt.
  *
- * Het handvat snapt naar de middens tussen twee opeenvolgende lengtes in de
- * gekozen groep - in de wortel zijn dat 19 stops. Dat zijn exact de drempels
- * die een boom overweegt, dus de waarde waar de leerling op uitkomt, is
- * dezelfde soort waarde als in zijn notebook.                              */
+ * HET HANDVAT HOORT BIJ EEN GEZETTE CONDITIE, niet bij een die je nog moet
+ * zetten. Dat is de vereenvoudiging van deze versie: klikken op een kenmerk
+ * splitst meteen, en daarna sleep je de grens van die splitsing terwijl de twee
+ * bladeren eronder live meetellen. Het oude bord had er een stippelvakje en een
+ * aparte knop "Splits deze groep" voor nodig - drie poorten voor één zet.
+ *
+ * Het handvat snapt naar de middens tussen twee opeenvolgende lengtes in het
+ * vakje. Dat zijn exact de drempels die een boom overweegt, dus de waarde waar
+ * de leerling op uitkomt, is dezelfde soort waarde als in zijn notebook.     */
 
 function LengteAs({
   ids,
   drempel,
-  actief,
   stops,
   regel,
   onSleep,
   onStap,
 }: {
   ids: readonly number[]
+  /** De drempel van het gekozen vakje, of `null` als er geen handvat is. */
   drempel: number | null
-  actief: boolean
   stops: number[]
   /** De ene regel onder de as. Zie `asRegel()` in het bord zelf. */
   regel: { tekst: string; kleur: string }
@@ -817,20 +678,14 @@ function LengteAs({
         />
       ))}
 
-      {/* Eén regel, altijd op dezelfde plaats en altijd links: of ze zegt wat
-          de as toont, of ze zegt welke conditie er nu staat EN wat de getallen
-          van dat kenmerk betekenen. Ze staat NIET onder het handvat
-          gecentreerd - dan zou ze bij een drempel aan de linkerkant over de
-          astekst schuiven.
-
-          Dit is de plaats waar `Kleur <= 0.50` leesbaar wordt. Ze is altijd
-          zichtbaar, ze kost geen enkele px extra, en ze staat precies waar de
-          leerling naar de conditie kijkt. Zie CODERING in src/lib/boom.ts. */}
+      {/* Eén regel, altijd op dezelfde plaats en altijd links. Ze staat NIET
+          onder het handvat gecentreerd - dan zou ze bij een drempel aan de
+          linkerkant over de astekst schuiven. */}
       <Tekst x={AS_X0} y={AS_Y + 42} kleur={regel.kleur}>
         {regel.tekst}
       </Tekst>
 
-      {actief && drempel !== null && (
+      {drempel !== null && (
         <>
           {/* Naast slepen mag je ook ergens op de as tikken: het handvat gaat
               dan naar de dichtste stop. Dat is niet alleen vriendelijker op een
@@ -887,10 +742,15 @@ function LengteAs({
           <g
             role="slider"
             tabIndex={0}
-            aria-label="sleep dit handvat om de drempel te kiezen"
-            aria-valuetext={conditieTekst({ kenmerk: LENGTE, drempel })}
+            aria-label="sleep dit handvat om de grens te verplaatsen"
+            aria-valuetext={`${getal(drempel, 1)} cm`}
             style={{ cursor: 'ew-resize' }}
             className="outline-none"
+            /* Het sleepdoel wordt hier ÉÉN keer vastgelegd, met
+               setPointerCapture op dit handvat. Zoek je per pointermove opnieuw
+               welk element onder de muis ligt, dan valt de sleep stil zodra de
+               muis het bolletje verlaat - en dat leest als een knop die stuk
+               is. */
             onPointerDown={(e) => {
               slepend.current = true
               ;(e.currentTarget as Element).setPointerCapture?.(e.pointerId)
@@ -943,13 +803,10 @@ type BordProps = {
   kaders: Kader[]
   gekozenKader: Kader
   pad: Pad
+  /** De drempel die het handvat toont, of `null` als er geen handvat is. */
   drempel: number | null
-  lengteActief: boolean
   stops: number[]
-  voorbeeld: { conditie: Conditie; kleur: string; woord: string } | null
   regel: { tekst: string; kleur: string }
-  /** Het openingsverhaal. `null` zodra de eerste conditie staat. */
-  opening: { verhaal: boolean; fout: number; klasse: Klasse; cartCondities: number } | null
   onKies: (pad: Pad) => void
   onDrempel: (cm: number) => void
   onStap: (richting: -1 | 1) => void
@@ -961,11 +818,8 @@ function Bord({
   gekozenKader,
   pad,
   drempel,
-  lengteActief,
   stops,
-  voorbeeld,
   regel,
-  opening,
   onKies,
   onDrempel,
   onStap,
@@ -983,65 +837,13 @@ function Bord({
    *  afstand tot de linkerrand van het bord; daarna terug naar bordpixels. */
   const naarCm = (clientX: number) => {
     const lokaal = (s.sx(s.toWorld({ clientX, clientY: 0 }).x) - ox) / k
-    return (
-      LENGTE_AS.van + ((lokaal - AS_X0) / (AS_X1 - AS_X0)) * (LENGTE_AS.tot - LENGTE_AS.van)
-    )
+    return LENGTE_AS.van + ((lokaal - AS_X0) / (AS_X1 - AS_X0)) * (LENGTE_AS.tot - LENGTE_AS.van)
   }
 
   const perPad = new Map(kaders.map((kader) => [padSleutel(kader.pad), kader]))
 
-  /* ---------------------------------------------------------------- *
-   * HOE LANG DE TWEE SLEUTELS BLIJVEN STAAN.
-   *
-   * Ze hingen aan `opening`, dus ze verdwenen bij de EERSTE splitsing. En dat
-   * is precies het moment waarop er meer `value = [a, b, c]` op het bord komen
-   * te staan, niet minder: na één splitsing staan er drie.
-   *
-   * Vanaf dan is de lijst in het paneel de enige plaats waar die drie posities
-   * hun naam krijgen, en die lijst staat in het scrollvak. GEMETEN, per
-   * schermmaat, hoeveel van de drie regels daar boven de rand staan:
-   *
-   *   1024x768   scrollvak 116 px   3 van de 3
-   *    900x700   scrollvak 122 px   1 van de 3   (18 px en 41 px eronder)
-   *   1280x720   scrollvak  94 px   0 van de 3   (22, 46 en 69 px eronder)
-   *
-   * Op de beamervloer en op 1280x720 kon een leerling na zijn eerste
-   * splitsing dus nergens meer zien dat de 4 vooraan Albert is. Het paneel
-   * heeft die ruimte niet: op 1280x720 vullen de twee computerknoppen 80 van
-   * de 94 px, dus daar past geen enkele regel meer bij.
-   *
-   * Daarom blijven de sleutels nu op het bord staan zolang er niets in hun
-   * band komt. De band begint op y 483 (zie de 12 px in `Sleutels` zelf); de
-   * boomrijen staan op 124, 248, 372 en 496, een blad is 104 px hoog en een
-   * stippelvakje 100. Dus:
-   *
-   *   diepte 0 of 1        onderkant hoogstens 352   ruim vrij
-   *   diepte 2, gesplitst  447                       vrij
-   *   diepte 2, blad       476                       vrij (band op 483)
-   *   diepte 3             600                       eroverheen  -> weg
-   *   stippelvakje rij 1   348   rij 2  472          vrij
-   *   stippelvakje rij 3   596                       eroverheen  -> weg
-   *
-   * Met een budget van drie condities is diepte 3 de laatste splitsing, en dan
-   * heeft de leerling de sleutel al twee splitsingen gebruikt. Een blad toont
-   * bovendien zelf zijn klasse naast zijn value.
-   * ---------------------------------------------------------------- */
-  const diepste = Math.max(...kaders.map((kader) => kader.diepte))
-  const toonSleutels = diepste <= 2 && !(voorbeeld !== null && gekozenKader.diepte >= 2)
-
   return (
     <g transform={`translate(${ox} ${oy}) scale(${k})`}>
-      {/* Het verhaal helemaal eerst: het staat onder de wortel in ruimte waar
-          nog niets is, en het gaat weg voor er iets overheen kan komen. */}
-      {opening?.verhaal && (
-        <Verhaal
-          fout={opening.fout}
-          klasse={opening.klasse}
-          cartCondities={opening.cartCondities}
-        />
-      )}
-      {toonSleutels && <Sleutels />}
-
       {/* Eerst de pijlen, dan de vakjes: zo komt geen lijn over een cijfer. */}
       {kaders.map((kader) => {
         if (isBlad(kader.vakje)) return null
@@ -1055,15 +857,6 @@ function Bord({
         )
       })}
 
-      {voorbeeld && (
-        <VoorbeeldVakje
-          kader={gekozenKader}
-          conditie={voorbeeld.conditie}
-          kleur={voorbeeld.kleur}
-          woord={voorbeeld.woord}
-        />
-      )}
-
       {kaders.map((kader) => (
         <VakjeVorm
           key={padSleutel(kader.pad)}
@@ -1076,7 +869,6 @@ function Bord({
       <LengteAs
         ids={gekozenKader.vakje.ids}
         drempel={drempel}
-        actief={lengteActief}
         stops={stops}
         regel={regel}
         onSleep={(clientX) => onDrempel(naarCm(clientX))}
@@ -1089,14 +881,16 @@ function Bord({
 /* ------------------------------- het bord --------------------------- */
 
 export default function KweekDeBoom() {
-  const [boom, setBoom] = useState<Vakje>(maakWortel)
-  /** Elke splitsing legt de vorige boom hierop, zodat één stap terug kan. Met
-   *  een budget van drie condities zou één misstap anders een herstart zijn. */
+  /* HET BORD OPENT MET EEN BOOM. Zie `OPENING` in src/lib/boom.ts voor de
+     meting achter die ene conditie. Het gekozen vakje is meteen het linkse
+     blad: dat is het volste gemengde vakje, dus er is precies één zinvolle
+     volgende zet - kies er een kenmerk voor. */
+  const [boom, setBoom] = useState<Vakje>(maakOpening)
+  /** Elke splitsing legt de vorige boom hierop, zodat stap terug kan. De stapel
+   *  begint leeg, dus je kan nooit vóór de opening terug: een bord zonder boom
+   *  is precies de toestand die hier weg moest. */
   const [terug, setTerug] = useState<{ boom: Vakje; pad: Pad }[]>([])
-  const [pad, setPad] = useState<Pad>([])
-  const [kenmerk, setKenmerk] = useState<KenmerkNr | null>(null)
-  const [drempel, setDrempel] = useState<number | null>(null)
-  const [schaduw, setSchaduw] = useState(false)
+  const [pad, setPad] = useState<Pad>(['waar'])
   const [computerOpen, setComputerOpen] = useState(false)
 
   const kaders = useMemo(() => legUit(boom), [boom])
@@ -1104,11 +898,10 @@ export default function KweekDeBoom() {
   const gekozen = gekozenKader.vakje
 
   const condities = aantalCondities(boom)
-  const fout = foutVanBoom(boom)
+  const klaar = aantalKlaar(boom)
   const bladeren = aantalBladeren(boom)
   const diepte = diepteVan(boom)
 
-  const stops = useMemo(() => drempels(gekozen.ids, LENGTE), [gekozen.ids])
   const computerKeuze = useMemo(() => besteConditie(gekozen.ids), [gekozen.ids])
 
   /* De boom van de computer en zijn vier getallen. Eén keer gerekend: hij
@@ -1119,80 +912,88 @@ export default function KweekDeBoom() {
       condities: aantalCondities(cart),
       bladeren: aantalBladeren(cart),
       diepte: diepteVan(cart),
-      fout: foutVanBoom(cart),
+      klaar: aantalKlaar(cart),
       gelijkspel: gelijkspelVakjes(cart),
     }),
     [cart],
   )
 
   const budgetOver = BUDGET - condities
-  const alGesplitst = !isBlad(gekozen)
   const isZuiver = zuiver(gekozen.ids)
   const teDiep = pad.length >= MAX_DIEPTE
-  const magSplitsen = !alGesplitst && !isZuiver && !teDiep && budgetOver > 0
+  const magSplitsen = isBlad(gekozen) && !isZuiver && !teDiep && budgetOver > 0
 
-  const conditie: Conditie | null =
-    kenmerk !== null && drempel !== null ? { kenmerk, drempel } : null
-
-  /** Welke kenmerken je in deze groep nog kan gebruiken. Een kenmerk waarop
-   *  alle voorbeelden dezelfde waarde hebben, heeft geen drempel meer - dat is
-   *  geen storing maar iets om te tonen: een kenmerk kan opgebruikt zijn. */
+  /** Welke kenmerken je in dit vakje nog kan gebruiken. Een kenmerk waarop alle
+   *  voorbeelden dezelfde waarde hebben, heeft geen drempel meer - dat is geen
+   *  storing maar iets om te tonen: een kenmerk kan opgebruikt zijn. */
   const mogelijk = useMemo(
     () => ([0, 1, 2, 3] as KenmerkNr[]).map((k) => drempels(gekozen.ids, k).length > 0),
     [gekozen.ids],
   )
 
-  const kies = (nieuwPad: Pad) => {
-    setPad(nieuwPad)
-    setKenmerk(null)
-    setDrempel(null)
-    setSchaduw(false)
-  }
+  /* HET HANDVAT HOORT BIJ HET GEKOZEN VAKJE, en alleen als dat vakje al op
+     Lengte gesplitst is EN zijn twee kinderen nog bladeren zijn. Die tweede
+     voorwaarde is nodig: slepen splitst dit vakje opnieuw en maakt er twee
+     verse bladeren van, dus een kleinkind zou verdwijnen zonder dat de leerling
+     erom vroeg. */
+  const opLengte =
+    !isBlad(gekozen) &&
+    gekozen.conditie!.kenmerk === LENGTE &&
+    isBlad(gekozen.waar!) &&
+    isBlad(gekozen.vals!)
+  const handvat = opLengte ? gekozen.conditie!.drempel : null
+  const stops = useMemo(() => (opLengte ? drempels(gekozen.ids, LENGTE) : []), [opLengte, gekozen])
 
-  const kiesKenmerk = (k: KenmerkNr) => {
+  const kies = (nieuwPad: Pad) => setPad(nieuwPad)
+
+  /**
+   * ÉÉN KLIK IS ÉÉN SPLITSING. Geen voorbeeldvakje, geen tweede knop: je kiest
+   * een kenmerk en de twee nieuwe vakjes staan er. Dat is de flow die Niels
+   * vroeg, en het maakt van elke knop een knop met een zichtbaar gevolg.
+   *
+   * De drempel begint in het MIDDEN van de stops en niet op de beste. Dat is
+   * met opzet: een handvat dat op zijn eindstand opent, geeft de leerling niets
+   * te doen en vertelt hem niet dat de grens iets uitmaakt. Gemeten vanaf de
+   * opening: in het linkse vakje zet Lengte de teller van 0 op 7, en slepen
+   * naar 53,0 cm brengt hem op 13.
+   */
+  const splitsMet = (k: KenmerkNr) => {
+    if (!magSplitsen) return
     const opties = drempels(gekozen.ids, k)
     if (opties.length === 0) return
-    setKenmerk(k)
-    setSchaduw(false)
-    /* Kleur, Materiaal en Soort hebben maar één mogelijke drempel: 0.50. Eén
-       klik en de conditie staat er. Dat is geen vereenvoudiging maar de data
-       van de les zelf (slide 2132210). Bij Lengte begint het handvat in het
-       midden van de stops, zodat er langs beide kanten te slepen valt. */
-    setDrempel(opties[Math.floor((opties.length - 1) / 2)])
-  }
-
-  const stapDrempel = (richting: -1 | 1) => {
-    if (drempel === null || stops.length === 0) return
-    const i = stops.indexOf(drempel)
-    const volgende = stops[Math.max(0, Math.min(stops.length - 1, i + richting))]
-    if (volgende !== undefined) setDrempel(volgende)
+    const drempel = opties[Math.floor((opties.length - 1) / 2)]
+    const nieuw = splitsVakje(gekozen, { kenmerk: k, drempel })
+    setTerug([...terug, { boom, pad }])
+    setBoom(vervangVakje(boom, pad, nieuw))
+    /* Bij Lengte blijft dit vakje gekozen: het handvat hoort erbij en er valt
+       hier dus nog werk te doen. Bij de andere kenmerken is dit vakje af, en
+       gaat de keuze naar het kind waar nog het meeste gemengd staat. Zo is er
+       na elke zet precies één zinvolle volgende zet. */
+    if (k === LENGTE) return
+    const open = (v: Vakje) => (zuiver(v.ids) ? 0 : v.ids.length)
+    const openWaar = open(nieuw.waar!)
+    const openVals = open(nieuw.vals!)
+    if (openWaar === 0 && openVals === 0) return
+    setPad(openVals > openWaar ? [...pad, 'vals'] : [...pad, 'waar'])
   }
 
   /** Naar de dichtste stop, want dat zijn de enige drempels die een boom
-   *  overweegt. */
+   *  overweegt. Slepen splitst het gekozen vakje opnieuw; de twee bladeren
+   *  eronder tellen dus live mee. */
   const zetDrempel = (cm: number) => {
-    if (stops.length === 0) return
+    if (!opLengte || stops.length === 0) return
     let beste = stops[0]
     for (const stop of stops) if (Math.abs(stop - cm) < Math.abs(beste - cm)) beste = stop
-    setDrempel(beste)
+    if (beste === gekozen.conditie!.drempel) return
+    setBoom(vervangVakje(boom, pad, splitsVakje(gekozen, { kenmerk: LENGTE, drempel: beste })))
   }
 
-  const splits = () => {
-    if (!conditie || !magSplitsen) return
-    const nieuwVakje = splitsVakje(gekozen, conditie)
-    setTerug([...terug, { boom, pad }])
-    setBoom(vervangVakje(boom, pad, nieuwVakje))
-    setKenmerk(null)
-    setDrempel(null)
-    setSchaduw(false)
-    /* Verder waar er nog werk is: het kind met de meeste fout. Zo staat het
-       gekozen vakje na een splitsing nooit op een vakje waar niets meer kan,
-       en de leerling ziet het woord "gekozen" mee verhuizen. */
-    const naar: Pad =
-      foutVanBoom(nieuwVakje.vals!) > foutVanBoom(nieuwVakje.waar!)
-        ? [...pad, 'vals']
-        : [...pad, 'waar']
-    setPad(naar)
+  const stapDrempel = (richting: -1 | 1) => {
+    if (!opLengte || stops.length === 0) return
+    const i = stops.indexOf(gekozen.conditie!.drempel)
+    const volgende = stops[Math.max(0, Math.min(stops.length - 1, i + richting))]
+    if (volgende === undefined || volgende === gekozen.conditie!.drempel) return
+    setBoom(vervangVakje(boom, pad, splitsVakje(gekozen, { kenmerk: LENGTE, drempel: volgende })))
   }
 
   const stapTerug = () => {
@@ -1201,88 +1002,38 @@ export default function KweekDeBoom() {
     setTerug(terug.slice(0, -1))
     setBoom(laatste.boom)
     setPad(laatste.pad)
-    setKenmerk(null)
-    setDrempel(null)
-    setSchaduw(false)
   }
 
-  const opnieuw = () => {
-    setBoom(maakWortel())
-    setTerug([])
-    setPad([])
-    setKenmerk(null)
-    setDrempel(null)
-    setSchaduw(false)
-    setComputerOpen(false)
-  }
-
-  /* Wat er onder het gekozen vakje getoond wordt: jouw conditie, of die van
-     de computer. Nooit beide, want het is één plaats. */
-  const voorbeeld =
-    schaduw && computerKeuze && !alGesplitst
-      ? { conditie: computerKeuze.conditie, kleur: MODEL, woord: 'de computer kiest' }
-      : conditie && magSplitsen
-        ? { conditie, kleur: DERDE_INK, woord: 'jouw conditie' }
-        : null
-
-  /* De ene regel onder de lengte-as. Ze staat er altijd, op dezelfde plaats,
-     en ze zegt het nuttigste van wat er op dat moment te zeggen valt.
-
-     Waarom de codering hier hoort: `Kleur <= 0.50` is voor een leerling die
-     hier koud aankomt geen conditie maar een raadsel, en slide 2224341 stelt
-     precies die vraag over de uitvoer van export_text - "Snap je wat hier
-     staat?". Deze regel is het antwoord, en ze kost geen enkele px, want de
-     plaats was er al. Bij Lengte staat er geen codering: die staat op de as
-     eronder in cm, en daar hoort het handvat bij. */
-  const asRegel = conditie
-    ? {
-        tekst:
-          kenmerk === LENGTE
-            ? `${conditieTekst(conditie)} · sleep het handvat`
-            : `${conditieTekst(conditie)} · ${CODERING[conditie.kenmerk]}`,
-        kleur: DERDE_INK,
-      }
-    : { tekst: 'De merken op de as zijn de lengtes van dit vakje.', kleur: MUTED }
-
-  /* Het openingsverhaal. Het verdwijnt in twee stappen, en beide stappen zijn
-     het gevolg van een klik van de leerling: de vier zinnen en de drie stappen
-     gaan weg zodra er een stippelvakje komt, de twee sleutels bij de eerste
-     splitsing (dan groeit de boom erover).
-
-     De voorwaarde is `voorbeeld === null` en niet `kenmerk === null`, en dat is
-     meetkunde. Het stippelvakje staat op y 248..348 in de middenkolom, precies
-     over de vier zinnen. Er zijn TWEE manieren om zo'n vakje te krijgen: zelf
-     een kenmerk kiezen, of op "Wat kiest de computer?" drukken zonder iets
-     gekozen te hebben. Die tweede weg overlapte, want daarbij blijft `kenmerk`
-     null - gezien op het bord, niet bedacht. */
-  const opening =
-    condities === 0
-      ? {
-          verhaal: voorbeeld === null,
-          fout,
-          klasse: grootste(boom.ids),
-          cartCondities: cartGetallen.condities,
-        }
-      : null
+  /* De ene regel onder de lengte-as. Ze staat er altijd, op dezelfde plaats, en
+     ze zegt het nuttigste van wat er op dat moment te zeggen valt. */
+  const asRegel = opLengte
+    ? { tekst: 'Sleep het handvat om de grens te verplaatsen.', kleur: DERDE_INK }
+    : { tekst: 'De as toont de lengtes van het gekozen vakje.', kleur: MUTED }
 
   /** Eén regel die zegt wat er met het gekozen vakje kan. Elke toestand heeft
-   *  haar eigen zin, want een knop die uitstaat zonder reden leest als een
-   *  bord dat stuk is. */
-  const stand = alGesplitst
-    ? 'Dit vakje is al gesplitst. Kies een blad om verder te bouwen.'
-    : isZuiver
-      ? 'Deze groep bestaat uit één klasse. Hier stopt de boom.'
-      : teDiep
-        ? 'Dit vakje staat op de onderste rij. Dieper gaat de boom hier niet.'
-        : budgetOver === 0
-          ? 'Je condities zijn op. Haal er een weg om verder te bouwen.'
-          : conditie
-            ? /* Niet nog eens de conditie: die staat op het bord onder de as
-                 én in het stippelvakje. Deze regel staat pal boven de knop en
-                 zegt daarom wat er nu te doen valt - het is stap 2 van het
-                 openingsverhaal, dat op dit moment van het bord verdwijnt. */
-              'Klik nu op Splits deze groep.'
-            : 'Kies een kenmerk voor deze groep.'
+   *  haar eigen zin, want een knop die uitstaat zonder reden leest als een bord
+   *  dat stuk is. Overal `vakje` en `blad`, nooit `groep`.
+   *
+   *  DE EINDSTAND STAAT BOVENAAN, en dat is gemeten en niet gekozen. Met de
+   *  boom af (wortel op Materiaal, links Lengte op 53,0 cm, rechts Kleur:
+   *  20 van 20 klaar) bleef hier "Dit vakje is al gesplitst. Klik op een blad
+   *  om verder te bouwen." staan. Het doel van het bord is precies dat elk
+   *  vakje één klasse heeft, dus dan mag de regel niet vragen om verder te
+   *  bouwen - er valt niets meer te bouwen. Het woord blijft `klaar`, hetzelfde
+   *  woord als de teller erboven. */
+  const stand = klaar === VOORBEELDEN.length
+    ? 'Elk vakje heeft één klasse. De boom is klaar.'
+    : opLengte
+    ? 'Sleep het handvat, of klik op een blad om verder te bouwen.'
+    : !isBlad(gekozen)
+      ? 'Dit vakje is al gesplitst. Klik op een blad om verder te bouwen.'
+      : isZuiver
+        ? 'Dit vakje heeft één klasse. Hier stopt de boom.'
+        : teDiep
+          ? 'Dit vakje staat op de onderste rij. Dieper gaat de boom niet.'
+          : budgetOver === 0
+            ? 'Je condities zijn op. Haal er een weg om verder te bouwen.'
+            : 'Kies een kenmerk voor dit vakje.'
 
   return (
     <div className="relative h-full w-full">
@@ -1297,12 +1048,9 @@ export default function KweekDeBoom() {
             kaders={kaders}
             gekozenKader={gekozenKader}
             pad={pad}
-            drempel={drempel}
-            lengteActief={kenmerk === LENGTE}
+            drempel={handvat}
             stops={stops}
-            voorbeeld={voorbeeld}
             regel={asRegel}
-            opening={opening}
             onKies={kies}
             onDrempel={zetDrempel}
             onStap={stapDrempel}
@@ -1310,188 +1058,117 @@ export default function KweekDeBoom() {
         )}
       </Canvas>
 
-      {/* ÉÉN ALINEA, en dat is het doel. Brief klapt onder 1280 px alles na de
-          eerste alinea in, dus dit is de enige zin die een leerling op een
-          beamer zeker leest - ze moet dus het doel zijn en niets anders.
-
-          Hier stond een tweede alinea met "kies een vakje, kies een kenmerk,
-          en splits de groep". Die is weg omdat het openingsverhaal op het bord
-          dat nu zegt, op ELKE breedte en met de getallen erbij. Twee keer
-          dezelfde instructie op één scherm is geen dubbele hulp: de leerling
-          leest de ene en de andere loopt uit de pas zodra er iets wijzigt. Het
-          scheelt ook de 38 px waar de code hier eerder over klaagde: op
-          1280x720 duwde die alinea de tweede computerknop van het paneel. */}
+      {/* DE EERSTE ALINEA IS HET DOEL. Brief klapt onder 1280 px alles na de
+          eerste alinea in, dus dit is de enige tekst die een leerling op een
+          beamer zeker leest - en wie via een slidelink binnenkomt, ziet de
+          portaalpagina nooit. */}
       <Brief eyebrow="mAIstros 2 - les 5" title="Bouw de boom">
         <p>
-          Een conditie splitst een groep in twee. De boom splitst door tot elke groep uit één
-          klasse bestaat.
+          Een conditie splitst een vakje in twee. De boom herhaalt dat tot elk vakje één klasse
+          bevat.
+        </p>
+        <p>
+          Bovenaan zitten alle {getal(VOORBEELDEN.length)} voorbeelden door elkaar. Klik op een
+          blad en kies een kenmerk.
         </p>
       </Brief>
 
       {/* Het paneel staat er van de eerste tel af en verandert nooit van
           breedte: Canvas reserveert die breedte als inzet, dus een paneel dat
-          later opduikt zou het bord herkaderen. De teller en de knoppen staan
-          vast; alleen de uitleg onderin scrollt, want een knop onder de rand
-          leest als een knop die er niet is.
+          later opduikt zou het bord herkaderen (gemeten: 1,45x op 1024 px).
 
           GEMETEN, EN DAAROM RUILT DIT PANEEL VAN INHOUD. Op 900x700 is het
-          paneel 508 px hoog, houdt het vaste deel er 375 van bezet en blijft er
-          122 px over.
-          De vergelijking met de computerboom is een tabel plus twee blokken
-          export_text, samen ongeveer 250 px: die past daar niet in en las
-          onleesbaar. Ze komt dus IN de plaats van de knoppen, niet eronder -
-          zelfde paneel, zelfde breedte, dus het bord blijft staan waar het
-          staat. De teller blijft wel boven, want die hoort naast de vier
-          getallen van de computer gelezen te worden. */}
+          paneel 508 px hoog. De vergelijking met de computerboom is een tabel
+          plus twee blokken export_text plus de codering, samen ruim 300 px: die
+          past daar niet onder de knoppen. Ze komt dus IN de plaats van de
+          knoppen - zelfde paneel, zelfde breedte, dus het bord blijft staan
+          waar het staat. De teller blijft wel boven, want die hoort naast de
+          vier getallen van de computer gelezen te worden. */}
       <Panel className="pointer-events-auto absolute bottom-4 left-4 z-10 flex max-h-[calc(100%-12rem)] w-[16rem] flex-col px-4 py-3.5 xl:max-h-[calc(100%-15rem)] xl:w-[21rem]">
         <div className="shrink-0">
           <div className="min-h-[4.7rem]">
+            {/* DE TELLER DIE BEWEEGT. Waarom niet de fout: zie `aantalKlaar` in
+                src/lib/boom.ts - drie van de vier eerste condities laten de fout
+                op 8 staan, en een leerling alleen leest dat als een misser. */}
             <Vaststelling
-              label="Fout"
-              value={fout}
+              label="Klaar"
+              value={klaar}
               outOf={{ total: VOORBEELDEN.length, noun: 'voorbeelden' }}
-              detail={`${getal(condities)} van de ${getal(BUDGET)} condities gebruikt.`}
+              detail="Een voorbeeld is klaar als zijn vakje één klasse heeft."
               color={NAVY}
             />
           </div>
 
-          <div className="mt-1 flex gap-3 text-[13px] tabular-nums text-ink/80">
-            <span>bladeren {getal(bladeren)}</span>
-            <span>diepte {getal(diepte)}</span>
+          {/* `whitespace-nowrap` per stukje, en niet één regel: op 16 rem brak
+              "condities 1 van 3" achter het woord "van" af, zodat er een losse
+              3 op de volgende regel stond. Nu wijkt het hele stukje uit. */}
+          <div className="mt-1 flex flex-wrap gap-x-3 text-[13px] tabular-nums text-ink/80">
+            <span className="whitespace-nowrap">
+              condities {getal(condities)} van {getal(BUDGET)}
+            </span>
+            <span className="whitespace-nowrap">bladeren {getal(bladeren)}</span>
+            <span className="whitespace-nowrap">diepte {getal(diepte)}</span>
           </div>
 
           <Divider />
         </div>
 
         {!computerOpen && (
-          <>
-            <div className="shrink-0">
-              {/* Geen kopje boven deze vier knoppen: ze noemen zelf de vier
-                  kenmerken, en de regel eronder zegt wat je ermee doet. Het
-                  kopje kostte 21 px die de uitleg onderin nodig heeft. */}
-              <div className="flex flex-wrap gap-1.5">
-                {KENMERKEN.map((naam, i) => (
-                  <Btn
-                    key={naam}
-                    variant={kenmerk === i ? 'primary' : 'ghost'}
-                    disabled={!magSplitsen || !mogelijk[i]}
-                    onClick={() => kiesKenmerk(i as KenmerkNr)}
-                  >
-                    {naam}
-                  </Btn>
-                ))}
-              </div>
-
-              <div className="mt-2 text-[13.5px] leading-snug text-ink">{stand}</div>
-
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                <Btn disabled={!conditie || !magSplitsen} onClick={splits}>
-                  Splits deze groep
-                </Btn>
-                <Btn variant="ghost" disabled={terug.length === 0} onClick={stapTerug}>
-                  Laatste conditie weg
-                </Btn>
-                <Btn variant="ghost" disabled={condities === 0} onClick={opnieuw}>
-                  Begin opnieuw
-                </Btn>
-              </div>
-            </div>
-
-            {/* Het streepje hoort BIJ de twee knoppen en staat daarom in het
-                scrollende deel: in het vaste deel kostte het 21 px die op
-                1280x720 net de tweede knop van het paneel duwden. Het is ook
-                krapper dan `Divider` (9 px in plaats van 21), en dat is
-                gemeten: met die 21 px bleef er 94 px over voor 101 px knoppen,
-                dus de tweede knop viel weer onder de rand. */}
-            <div className="min-h-0 overflow-y-auto">
-              <div className="mb-2 h-px bg-black/[0.07]" />
-
-              {/* De twee computerknoppen staan boven de uitleg en tegen elkaar
-                  aan. Gemeten: er blijft 122 px over op 900x700 en 94 px op
-                  1280x720, dus zo staan ze allebei volledig binnen bereik en
-                  scrollt alleen de tekst. Zetten we ze in het vaste deel, dan valt de tweede
-                  van het paneel af; zetten we de uitleg ertussen, dan valt ze
-                  onder de rand - beide gemeten. De eerste legt het mechanisme
-                  uit, dus die komt eerst. */}
-              <div className="flex flex-col gap-1.5">
+          <div className="min-h-0 overflow-y-auto">
+            {/* Geen kopje boven deze vier knoppen: ze noemen zelf de vier
+                kenmerken, en de regel eronder zegt wat je ermee doet. Eén klik
+                zet de conditie en splitst het gekozen vakje meteen. */}
+            <div className="flex flex-wrap gap-1.5">
+              {KENMERKEN.map((naam, i) => (
                 <Btn
+                  key={naam}
                   variant="ghost"
-                  disabled={alGesplitst || !computerKeuze}
-                  onClick={() => setSchaduw(!schaduw)}
+                  disabled={!magSplitsen || !mogelijk[i]}
+                  onClick={() => splitsMet(i as KenmerkNr)}
                 >
-                  {schaduw ? 'Verberg die conditie' : 'Wat kiest de computer?'}
+                  {naam}
                 </Btn>
-                <Btn variant="ghost" onClick={() => setComputerOpen(true)}>
-                  De boom van de computer
-                </Btn>
-              </div>
-
-              <div className="h-2" />
-
-              {schaduw && computerKeuze && (
-                <div className="mb-2 text-[13.5px] leading-snug text-ink">
-                  De computer kiest hier {conditieTekst(computerKeuze.conditie)}.
-                  {computerKeuze.evenGoed > 1 && (
-                    <>
-                      {' '}
-                      Hier zijn {getal(computerKeuze.evenGoed)} condities even goed. Dan kiest
-                      sklearn er willekeurig één.
-                    </>
-                  )}
-                </div>
-              )}
-
-              {/* DE SLEUTEL STAAT BOVENAAN HET SCROLLVAK, en dat is gemeten.
-                  Op 900x700 is het scrollvak 122 px hoog en de inhoud 547 px,
-                  dus 425 px staat onder de rand. Stond deze lijst na de Note
-                  en een Divider, dan lag de enige plaats waar `value = [4, 4,
-                  12]` zijn drie namen krijgt 357 px diep in een scrollvak - en
-                  dat is de sleutel die je als eerste nodig hebt. De uitleg over
-                  wat de computer DOET komt eronder: die is naslag. */}
-              <ul className="space-y-1">
-                {KLASSEN.map((klasse, i) => (
-                  <li key={klasse} className="flex items-center gap-2 text-[13px] text-ink/80">
-                    <MerkHTML klasse={klasse} />
-                    {klasse}
-                    <span className="text-muted">{`value[${i}]`}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-1.5 text-[12.5px] leading-snug text-muted">
-                De strip in een vakje toont dezelfde drie getallen als een balk.
-              </p>
-
-              <Divider />
-
-              {/* Nooit dat de uitkomst de beste boom is: gemeten is hij op deze
-                  data met drie condities te verslaan. Wel wat hij DOET. */}
-              <Note>
-                <p>De computer probeert alle condities op alle kenmerken.</p>
-                <p className="mt-1.5">
-                  Hij kiest de conditie die de twee groepen het meest uit één klasse maakt.
-                </p>
-                <p className="mt-1.5">Hij kijkt één conditie vooruit, niet verder.</p>
-              </Note>
-
-              <div className="mt-2" />
-              {/* Waarom een kenmerkknop soms uit staat. Als vaste regel en niet
-                  als melding bij de knoppen: een zin die komt en gaat, verschuift
-                  alles eronder, en op 1280x720 blijft er maar 5 px over onder de
-                  twee computerknoppen. Zo staat de uitleg er altijd en springt
-                  er niets. */}
-              <p className="mt-1.5 text-[12.5px] leading-snug text-muted">
-                Een kenmerk staat uit als elk voorbeeld in de groep daar dezelfde waarde heeft.
-                Dan valt er niets te splitsen.
-              </p>
-
-              <div className="mt-2 text-[11.5px] leading-relaxed text-muted">
-                In je notebook: <PyChip>DecisionTreeClassifier()</PyChip> en{' '}
-                <PyChip>export_text(clf)</PyChip>
-              </div>
+              ))}
             </div>
-          </>
+
+            <div className="mt-2 text-[13.5px] leading-snug text-ink">{stand}</div>
+
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Btn variant="ghost" disabled={terug.length === 0} onClick={stapTerug}>
+                Laatste conditie weg
+              </Btn>
+            </div>
+
+            <div className="my-2 h-px bg-black/[0.07]" />
+
+            <Btn variant="ghost" full onClick={() => setComputerOpen(true)}>
+              De computer
+            </Btn>
+
+            {/* Waarom een kenmerkknop soms uit staat. Als vaste regel en niet als
+                melding bij de knoppen: een zin die komt en gaat, verschuift alles
+                eronder.
+
+                DIT IS HET LAATSTE BLOK IN DIT PANEEL, en dat is gemeten. Hier
+                stond ook een Note van drie alinea's over hoe de computer zoekt.
+                Daarmee toonde het scrollvak op 1024x768 390 van 454 px: 64 px
+                stond onder de rand, waaronder deze regel. Die Note is verhuisd
+                naar het scherm van de computer, waar de rest over die boom ook
+                staat - proza over de computer hoort daar, niet naast de knoppen
+                waarmee de leerling zijn eigen boom bouwt. Nu is de inhoud 209 px
+                en scrollt er niets, ook niet op 900x700. */}
+            <p className="mt-2 text-[12.5px] leading-snug text-muted">
+              Een kenmerk staat uit als elk voorbeeld in het vakje daar dezelfde waarde heeft.
+            </p>
+          </div>
         )}
 
+        {/* DE BRUG NAAR HET NOTEBOOK, achter één knop. Hier staat de notatie die
+            de les zelf afdrukt (2132149) en waar ze op 2224341 "Snap je wat hier
+            staat?" over vraagt: export_text, met de codering van de vier
+            kenmerken ernaast. Niet op het bord, want daar zou een leerling ze
+            moeten decoderen voor hij een boom kan lezen. Hier is ze het antwoord
+            op die vraag, naast dezelfde boom in woorden. */}
         {computerOpen && (
           <>
             <div className="shrink-0">
@@ -1501,33 +1178,90 @@ export default function KweekDeBoom() {
             </div>
 
             <div className="mt-2 min-h-0 space-y-2 overflow-y-auto">
+              {/* GEMETEN OP 900x700, waar dit paneel 16 rem breed is en er 224 px
+                  binnen de rand overblijft. Met kapitalen en `tracking` liepen
+                  de vier kopjes samen tot "COND.BLAD.DIEP.KLAA" en viel de
+                  laatste letter buiten het paneel. Kleine letters zonder
+                  tracking halen dezelfde vier kopjes in 110 px, en dan past
+                  "de computer" er ongebroken naast. */}
               <table className="w-full border-collapse text-[13px] tabular-nums">
                 <thead>
-                  <tr className="text-left text-[11.5px] uppercase tracking-[0.06em] text-ink/70">
-                    <th className="font-bold">boom</th>
-                    <th className="font-bold">cond.</th>
-                    <th className="font-bold">blad.</th>
-                    <th className="font-bold">diep.</th>
-                    <th className="font-bold">fout</th>
+                  <tr className="text-right text-[11.5px] font-semibold text-ink/70">
+                    <th />
+                    <th className="pl-2">cond.</th>
+                    <th className="pl-2">blad.</th>
+                    <th className="pl-2">diep.</th>
+                    <th className="pl-2">klaar</th>
                   </tr>
                 </thead>
-                <tbody className="text-ink">
+                <tbody className="text-right text-ink">
                   <tr>
-                    <td className="pr-1">jouw boom</td>
-                    <td>{getal(condities)}</td>
-                    <td>{getal(bladeren)}</td>
-                    <td>{getal(diepte)}</td>
-                    <td>{getal(fout)}</td>
+                    <td className="whitespace-nowrap text-left">jouw boom</td>
+                    <td className="pl-2">{getal(condities)}</td>
+                    <td className="pl-2">{getal(bladeren)}</td>
+                    <td className="pl-2">{getal(diepte)}</td>
+                    <td className="pl-2">{getal(klaar)}</td>
                   </tr>
                   <tr>
-                    <td className="pr-1">de computer</td>
-                    <td>{getal(cartGetallen.condities)}</td>
-                    <td>{getal(cartGetallen.bladeren)}</td>
-                    <td>{getal(cartGetallen.diepte)}</td>
-                    <td>{getal(cartGetallen.fout)}</td>
+                    <td className="whitespace-nowrap text-left">de computer</td>
+                    <td className="pl-2">{getal(cartGetallen.condities)}</td>
+                    <td className="pl-2">{getal(cartGetallen.bladeren)}</td>
+                    <td className="pl-2">{getal(cartGetallen.diepte)}</td>
+                    <td className="pl-2">{getal(cartGetallen.klaar)}</td>
                   </tr>
                 </tbody>
               </table>
+
+              {computerKeuze && (
+                <p className="text-[13px] leading-snug text-ink/80">
+                  In het gekozen vakje zou de computer {conditieTekst(computerKeuze.conditie)}{' '}
+                  kiezen.
+                  {computerKeuze.evenGoed > 1 && (
+                    <>
+                      {' '}
+                      Hier zijn {getal(computerKeuze.evenGoed)} condities even goed. Dan kiest
+                      sklearn er willekeurig één.
+                    </>
+                  )}
+                </p>
+              )}
+
+              {/* Nooit dat de uitkomst van de computer de beste boom is: gemeten
+                  is hij op deze data met drie condities te verslaan. Wel wat hij
+                  DOET, want dat is het mechanisme. */}
+              <Note>
+                <p>De computer probeert alle condities op alle kenmerken.</p>
+                <p className="mt-1.5">
+                  Hij kiest de conditie die de twee vakjes het meest uit één klasse maakt.
+                </p>
+                <p className="mt-1.5">
+                  Hier heeft hij er {getal(cartGetallen.condities)} nodig. Jij mag er{' '}
+                  {getal(BUDGET)} zetten.
+                </p>
+              </Note>
+
+              {/* Eén zin die de brug benoemt. Zonder haar staan er twee
+                  schrijfwijzen van dezelfde conditie op één scherm - "< 53,0 cm"
+                  op het bord en `Lengte <= 53.04` hieronder - en moet een
+                  leerling zelf raden dat het hetzelfde is. */}
+              <p className="text-[13px] leading-snug text-ink/80">
+                Hieronder staat dezelfde boom zoals Python hem afdrukt.
+              </p>
+
+              {/* DE CODERING STAAT PAL BOVEN DE TWEE CODEBLOKKEN, want ze is de
+                  decoder ervan: zonder "0 blauw, 1 oranje" is `Kleur <= 0.50`
+                  onleesbaar. Op het bord hoort ze niet - daar staan de woorden
+                  zelf in de vakjes. Gemeten: dit scrollvak is 278 px hoog op
+                  900x700 en de inhoud 999 px, dus wat je nodig hebt om het
+                  volgende blok te lezen, moet ervoor staan en niet erna. */}
+              <ul className="space-y-0.5">
+                {KENMERKEN.map((naam, i) => (
+                  <li key={naam} className="flex gap-2 text-[13px] text-ink/80">
+                    <span className="w-[4.6rem] shrink-0 font-semibold">{naam}</span>
+                    <span className="text-muted">{CODERING[i]}</span>
+                  </li>
+                ))}
+              </ul>
 
               <div>
                 <div className="text-[11.5px] font-bold uppercase tracking-[0.09em] text-ink/75">
@@ -1547,11 +1281,10 @@ export default function KweekDeBoom() {
                 </pre>
               </div>
 
-              {/* Zonder deze regel zou het bord een tekst tonen die een
-                  notebook niet hoeft af te drukken: de les geeft geen
-                  random_state mee, en bij een gelijkspel kiest sklearn
-                  willekeurig. De vier getallen hierboven zijn wel stabiel -
-                  over 300 runs altijd dezelfde. */}
+              {/* Zonder deze regel zou het bord een tekst tonen die een notebook
+                  niet hoeft af te drukken: de les geeft geen random_state mee, en
+                  bij een gelijkspel kiest sklearn willekeurig. De vier getallen
+                  hierboven zijn wel stabiel - over 300 runs altijd dezelfde. */}
               {cartGetallen.gelijkspel > 0 && (
                 <p className="text-[13px] leading-snug text-ink/80">
                   Op {getal(cartGetallen.gelijkspel)}{' '}

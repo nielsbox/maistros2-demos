@@ -3,7 +3,7 @@
  * je erop kan zetten, en de boom die sklearn er zelf van maakt.
  *
  * Dit bestand is de rekenkant van het bord "Bouw de boom". Het weet niets over
- * pixels, panelen of kleuren - alleen over groepen voorbeelden, condities en
+ * pixels, panelen of kleuren - alleen over vakjes vol voorbeelden, condities en
  * fout. De meetkunde staat in src/demos/KweekDeBoom.tsx.
  *
  * ------------------------------------------------------------------------
@@ -91,7 +91,7 @@
  * runs zonder `random_state` - en de les geeft er zelf geen mee - komt er altijd
  * 4 condities, 5 bladeren, diepte 3, 0 fout uit. Maar `export_text` gaf in 20
  * runs VIJF verschillende teksten, want op twee vakjes zijn meerdere condities
- * exact even goed (gini gelijk tot op de laatste bit): in de linkergroep zijn
+ * exact even goed (gini gelijk tot op de laatste bit): in het linkervakje zijn
  * `Materiaal <= 0.50` en `Soort <= 0.50` gelijk, en diep rechts zijn `Kleur <=
  * 0.50`, `Lengte <= 132.28` en `Soort <= 0.50` alle drie gelijk. sklearn kiest
  * daar willekeurig. Daarom telt `gelijkspelVakjes()` die vakjes: het bord mag
@@ -111,6 +111,23 @@
  * 50 bij n=1000. Fout hoort bij de hele boom, zoals de les het zelf afdrukt.
  *
  * Meetscripts: scratchpad/m/gen.py en v_bouw*.py van deze sessie.
+ *
+ * ------------------------------------------------------------------------
+ * WAT ER OP 2026-09-09 VERANDERD IS, EN WAAROM
+ * ------------------------------------------------------------------------
+ *
+ * Niels keek naar het bord: "Why dont I see a decision tree?" en "Keep it
+ * simple stupid, the flow and interpretation needs to be very clear for a 15
+ * year old". Drie dingen kwamen daaruit, en ze staan alle drie hier:
+ *
+ *   `OPENING`      het bord opent met de wortel AL gesplitst, want geen enkele
+ *                  eerste conditie levert een zuiver blad op
+ *   `WOORDEN`      een vakje zegt "Materiaal / is plush" in plaats van
+ *                  `Materiaal <= 0.50`; de Python-notatie blijft in
+ *                  `conditieTekst` en `exportText`, voor de brug naar het
+ *                  notebook
+ *   `aantalKlaar`  de teller waar het bord naar wijst, want de fout beweegt bij
+ *                  drie van de vier eerste zetten niet
  */
 
 /* --------------------------- de klassen -------------------------------- *
@@ -160,13 +177,39 @@ export const CODERING: readonly string[] = [
   '0 haai, 1 robot',
 ]
 
+/**
+ * Dezelfde codering, maar als losse woorden, zodat een vakje op het bord in
+ * het Nederlands kan zeggen wat het test: "Materiaal / is plush".
+ *
+ * WAAROM DIT ERBIJ KOMT. Niels keek naar het bord en zag `samples = 20`,
+ * `value = [4, 4, 12]` en `Kleur <= 0.50` staan, met onderaan een blok dat al
+ * die notatie uitlegde. Als een prent een decoder nodig heeft, is de prent
+ * fout. De les drukt die notatie wel af (2132149) en vraagt op 2224341 "Snap
+ * je wat hier staat?" - dus ze mag niet verdwijnen, maar ze hoort niet in de
+ * eerste blik. Het bord toont nu de woorden, en `conditieTekst()` hierboven
+ * levert dezelfde conditie in Python-notatie voor de brug naar het notebook.
+ *
+ * `null` voor Lengte: dat kenmerk heeft geen twee woorden maar een getal, en
+ * dat getal staat met zijn eenheid op de as.
+ *
+ * De index is die van `KENMERKEN`, en het eerste woord hoort bij waarde 0 -
+ * dus bij de WARE kant van `<= 0.50`, want `splitsIds` zet `waarde <= drempel`
+ * links.
+ */
+export const WOORDEN: readonly (readonly [string, string] | null)[] = [
+  ['blauw', 'oranje'],
+  ['plush', 'metaal'],
+  null,
+  ['haai', 'robot'],
+]
+
 /** Het enige kenmerk met meer dan één mogelijke drempel, dus het enige waar
  *  een leerling iets te slepen heeft. */
 export const LENGTE: KenmerkNr = 2
 
 /** De as waarop de lengte staat: exact de grenzen van de generator van de les
  *  (`random.uniform(25.0, 140.0)`), niet de kleinste en grootste lengte in de
- *  data. Anders zou de as van de gekozen groep afhangen en zou hetzelfde
+ *  data. Anders zou de as van het gekozen vakje afhangen en zou hetzelfde
  *  handvat op elk vakje een andere plaats hebben. */
 export const LENGTE_AS = { van: 25, tot: 140 } as const
 
@@ -176,10 +219,49 @@ export const LENGTE_AS = { van: 25, tot: 140 } as const
  *  foutloze boom hier nodig heeft, en één minder dan sklearn gebruikt. */
 export const BUDGET = 3
 
-/** Zo diep mag de boom. Binnen een budget van drie condities kan het niet
- *  dieper, dus dit is een tweede slot op dezelfde deur - en het houdt de
- *  vakjes binnen de vier rijen die het bord tekent. */
-export const MAX_DIEPTE = 3
+/**
+ * Zo diep mag de boom.
+ *
+ * TWEE en niet drie, en dat is de geometrie plus een vereenvoudiging. Vier
+ * bladeren naast elkaar zijn 520 px, dus vier kolommen is de cap; met drie
+ * condities is er dan precies één vorm die het budget opmaakt: de wortel
+ * gesplitst en daarna haar twee kinderen. Dat is ook de enige vorm die op deze
+ * data foutloos wordt (gemeten, zie hieronder). Een diepere ketting zou
+ * kolommen verspillen en een rij extra lege bordhoogte kosten.
+ */
+export const MAX_DIEPTE = 2
+
+/**
+ * De conditie waarmee het bord OPENT. De wortel staat dus al gesplitst.
+ *
+ * WAAROM. Niels keek naar het oude bord en vroeg: "Why dont I see a decision
+ * tree?" Terecht: het opende op diepte 0 met één vakje, en de knop "Splits
+ * deze groep" stond uit tot je eerst een kenmerk gekozen had. Het onderwerp
+ * van het bord zat achter twee poorten, zonder leerkracht ernaast om te zeggen
+ * welke knop eerst. Dezelfde fout als de schuifknop van les 4 die op 28 van 28
+ * opende: de opening toont niet waar het bord over gaat.
+ *
+ * WAAROM `Materiaal <= 0.50` EN GEEN ANDERE. Alle 22 mogelijke eerste condities
+ * zijn nagerekend (scratchpad m1.mjs van deze sessie):
+ *
+ *   - Er is GEEN eerste conditie die een blad met één klasse oplevert. Elke
+ *     eerste splitsing haalt Albert en Blahaj van elkaar en laat twee gemengde
+ *     vakjes achter. Daarom kan de eerste splitsing niet van de leerling komen:
+ *     zijn eerste klik zou geen enkel getal bewegen.
+ *   - `Materiaal` is de enige van de vier die de fout meteen laat zakken (8 ->
+ *     7); Kleur, Soort en Lengte op hun standaarddrempel laten er 8 staan.
+ *   - Openen met `Kleur` maakt het bord onwinbaar: daarna zijn er nog DRIE
+ *     condities nodig voor nul fout, en het budget is drie in totaal. Met
+ *     `Materiaal` of `Soort` blijven er twee nodig, dus precies twee over.
+ *   - Tussen die twee kiest dit bord `Materiaal`, want `Soort` is hier een
+ *     kenmerk en botst met het woord `klasse` zodra het los op een vakje staat.
+ *
+ * De twee vakjes die eruit komen: plush met `value = [0, 4, 9]` en metaal met
+ * `value = [4, 0, 3]`. Vanaf daar bewegen 5 van de 6 mogelijke vervolgacties
+ * de teller `aantalKlaar` meteen, en de zesde (Lengte op metaal) beweegt hem
+ * zodra je het handvat sleept.
+ */
+export const OPENING: Conditie = { kenmerk: 1, drempel: 0.5 }
 
 export type Voorbeeld = {
   /** Kleur, Materiaal, Lengte, Soort - in de volgorde van `KENMERKEN`. */
@@ -212,15 +294,15 @@ export const VOORBEELDEN: readonly Voorbeeld[] = [
   { waarden: [1.0, 0.0, 67.21924061411512, 1.0], klasse: 'Onbekend wezen' },
 ]
 
-/** Alle twintig, als de groep waarmee het bord opent. */
+/** Alle twintig, als het vakje waarmee het bord opent. */
 export const ALLE_IDS: readonly number[] = VOORBEELDEN.map((_, i) => i)
 
 /** De waarde van één voorbeeld op één kenmerk. */
 export const waarde = (id: number, k: KenmerkNr): number => VOORBEELDEN[id].waarden[k]
 
-/* ------------------------------ groepen -------------------------------- */
+/* ------------------------------- vakjes -------------------------------- */
 
-/** `value = [a, b, c]`: hoeveel voorbeelden van elke klasse in deze groep
+/** `value = [a, b, c]`: hoeveel voorbeelden van elke klasse in dit vakje
  *  zitten, in de volgorde van `KLASSEN`. */
 export function tel(ids: readonly number[]): [number, number, number] {
   const uit: [number, number, number] = [0, 0, 0]
@@ -242,7 +324,7 @@ export function grootste(ids: readonly number[]): Klasse {
   return KLASSEN[beste]
 }
 
-/** Hoeveel voorbeelden in deze groep een andere klasse hebben dan wat het
+/** Hoeveel voorbeelden in dit vakje een andere klasse hebben dan wat het
  *  vakje voorspelt. Dit is het enige foutgetal op het bord, en het hoort bij
  *  een hele boom, nooit bij één conditie. */
 export function foutIn(ids: readonly number[]): number {
@@ -251,13 +333,13 @@ export function foutIn(ids: readonly number[]): number {
   return ids.length - Math.max(...c)
 }
 
-/** Bestaat deze groep uit één klasse? Dan is er niets meer te splitsen. */
+/** Bestaat dit vakje uit één klasse? Dan is er niets meer te splitsen. */
 export function zuiver(ids: readonly number[]): boolean {
   const c = tel(ids)
   return c.filter((v) => v > 0).length <= 1
 }
 
-/** Gini van een groep. Rekent, en staat nergens op het scherm - zie de kop. */
+/** Gini van een vakje. Rekent, en staat nergens op het scherm - zie de kop. */
 function gini(ids: readonly number[]): number {
   const n = ids.length
   if (n === 0) return 0
@@ -270,14 +352,14 @@ function gini(ids: readonly number[]): number {
 export type Conditie = { kenmerk: KenmerkNr; drempel: number }
 
 /**
- * Elke drempel die een boom op dit kenmerk in deze groep zou overwegen: het
+ * Elke drempel die een boom op dit kenmerk in dit vakje zou overwegen: het
  * midden tussen twee opeenvolgende waarden die er echt voorkomen.
  *
  * Daarom snapt het handvat naar deze getallen en niet naar hele centimeters:
  * tussen twee voorbeelden liggen oneindig veel drempels die allemaal dezelfde
- * twee groepen geven, en de boom kiest er dan altijd het midden van.
+ * twee vakjes geven, en de boom kiest er dan altijd het midden van.
  *
- * Een leeg antwoord betekent dat alle voorbeelden in deze groep dezelfde
+ * Een leeg antwoord betekent dat alle voorbeelden in dit vakje dezelfde
  * waarde hebben. Dan kan je op dit kenmerk niet meer splitsen, en dat is geen
  * fout maar iets om te tonen: een kenmerk kan opgebruikt zijn.
  */
@@ -288,7 +370,7 @@ export function drempels(ids: readonly number[], k: KenmerkNr): number[] {
   return uit
 }
 
-/** De groep in twee: waar de conditie klopt, en waar ze niet klopt. De les
+/** Het vakje in twee: waar de conditie klopt, en waar ze niet klopt. De les
  *  zegt het zo op 2224342: de pijl naar links als de conditie waar is, naar
  *  rechts als ze vals is. */
 export function splitsIds(
@@ -305,8 +387,8 @@ export function splitsIds(
 }
 
 /**
- * Wat de computer in deze groep zou kiezen: van alle mogelijke condities de
- * conditie die de twee groepen het meest uit één klasse maakt. Dat is precies
+ * Wat de computer in dit vakje zou kiezen: van alle mogelijke condities de
+ * conditie die de twee nieuwe vakjes het meest uit één klasse maakt. Dat is precies
  * wat CART doet, met gini als maat.
  *
  * `evenGoed` zegt hoeveel condities exact even goed zijn. Dat is geen
@@ -371,7 +453,8 @@ export const maakBlad = (ids: readonly number[]): Vakje => ({
   vals: null,
 })
 
-/** Het bord opent hiermee: één vakje met alle twintig voorbeelden erin. */
+/** Eén vakje met alle twintig voorbeelden erin. Niet de opening van het bord:
+ *  zie `OPENING` en `maakOpening()` hieronder. */
 export const maakWortel = (): Vakje => maakBlad(ALLE_IDS)
 
 /** Zet een conditie op dit vakje. De twee nieuwe vakjes zijn bladeren. */
@@ -381,6 +464,10 @@ export function splitsVakje(v: Vakje, c: Conditie): Vakje {
 }
 
 export const isBlad = (v: Vakje): boolean => v.conditie === null
+
+/** De boom waarmee het bord opent: de wortel al gesplitst door `OPENING`, dus
+ *  drie vakjes en twee pijlen. Zie de uitleg bij `OPENING`. */
+export const maakOpening = (): Vakje => splitsVakje(maakWortel(), OPENING)
 
 /** Elk vakje van de boom, met zijn pad, van boven naar onder. */
 export function alleVakjes(v: Vakje, pad: Pad = []): { pad: Pad; vakje: Vakje }[] {
@@ -433,7 +520,46 @@ export function foutVanBoom(v: Vakje): number {
 }
 
 /**
- * De boom die sklearn zelf bouwt: splits door tot elke groep uit één klasse
+ * Hoeveel voorbeelden in een blad met ÉÉN klasse zitten. Dit is de teller die
+ * het bord toont, en het is de maat waarnaar de leerling kijkt.
+ *
+ * WAAROM NIET `foutVanBoom`. Het oude bord zei "Herhaal tot er niets meer fout
+ * staat" en zette de fout groot in het paneel. Nagerekend over alle 22
+ * mogelijke eerste condities: `Kleur` laat de fout op 8, `Soort` op 8, `Lengte`
+ * op zijn standaarddrempel op 8, en alleen `Materiaal` zakt naar 7. Drie van de
+ * vier eerste zetten bewogen dus niets aan het getal waar het bord naar wees,
+ * en een leerling alleen besluit dan dat hij het fout doet.
+ *
+ * Dit getal is de STOPREGEL van de boom zelf, en dat is precies waar de les
+ * over gaat: splitsen tot elk vakje uit één klasse bestaat. Het beweegt zodra
+ * één blad zuiver wordt, dus veel eerder dan de fout.
+ *
+ * Het is geen andere finish, maar dezelfde finish eerder gemeten:
+ * `aantalKlaar(v) === 20` en `foutVanBoom(v) === 0` zijn hetzelfde ding. Fout 0
+ * betekent per blad dat er geen enkel voorbeeld naast de meerderheid zit, en
+ * dat is exact "elk blad heeft één klasse".
+ *
+ * Gemeten vanaf de opening (`OPENING`), voor elk van de zes mogelijke
+ * vervolgacties, met de drempel waar het handvat begint:
+ *
+ *   plush  + Kleur    0 -> 7
+ *   plush  + Lengte   0 -> 7    en 13 als je het handvat naar 53,0 sleept
+ *   plush  + Soort    0 -> 5
+ *   metaal + Kleur    0 -> 7
+ *   metaal + Soort    0 -> 1
+ *   metaal + Lengte   0 -> 0    en 2 zodra je het handvat sleept
+ *
+ * Materiaal staat in beide vakjes uit: daar heeft elk voorbeeld dezelfde
+ * waarde. Vijf van de zes acties bewegen de teller dus meteen, tegen één van
+ * de vier op het oude bord.
+ */
+export function aantalKlaar(v: Vakje): number {
+  if (isBlad(v)) return zuiver(v.ids) ? v.ids.length : 0
+  return aantalKlaar(v.waar!) + aantalKlaar(v.vals!)
+}
+
+/**
+ * De boom die sklearn zelf bouwt: splits door tot elk vakje uit één klasse
  * bestaat, en kies elke keer de beste conditie van dat moment.
  *
  * `maxDiepte` is er voor de vergelijking die de les zelf maakt (2224243 zet

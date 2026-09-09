@@ -61,7 +61,8 @@ import {
  *           in woorden. Plus de strook waar Albert en Blahaj door elkaar lopen,
  *           want dat is de reden dat er straks een curve nodig is.
  *   stap 2  de curve in een bewust slechte stand, de stokjes, de twee
- *           handvatten, en een naam bij het langste stokje: de fout.
+ *           handvatten, en een naam bij het langste stokje: de fout. De twee
+ *           rijnamen worden hier kort, want de codering is in stap 1 uitgelegd.
  *   stap 3  Trainen. De eigen curve blijft als stippellijn staan, met "hier
  *           begon jij" erbij, zodat het zoeken zichtbaar bij de leerling begint.
  *
@@ -69,21 +70,64 @@ import {
  * wordt niets afgeschermd: de knop van de volgende stap staat er altijd en
  * doet altijd iets.
  *
+ * EEN BIJSCHRIFT HEEFT WERK, EN GAAT WEG ZODRA DAT WERK KLAAR IS.
+ *
+ * Dit is de les van deze ronde, en ze is duur betaald. De stappen boven zetten
+ * er elk iets bij, maar er ging nooit iets af: het bord telde één bijschrift in
+ * stap 1, en `heeftCurve` zette daar in stap 2 vijf bijschriften bovenop en
+ * liet ze in stap 3 alle vijf staan met de zesde erbij. Geteld in de browser op
+ * 1024x768, asnamen en asgetallen niet meegerekend: 4 in stap 1, 9 in stap 2,
+ * 10 in stap 3. Niels keek naar stap 3 en zei: "This looks cluttered and waaaay
+ * too hard to interpret for a 15 year old". Dat is geen woordkeuze-probleem.
+ *
+ * Er staan er nu 4, 4 en 4, en dat is een budget en geen streefdoel. Wat er per
+ * stap wegging en waarom:
+ *
+ *   stap 1  niets. 4 bijschriften, en elk ervan doet hier zijn werk: de strook
+ *           stelt de vraag, de stapel telt de merken die op elkaar liggen, en
+ *           de twee rijnamen leggen de codering uit.
+ *   stap 2  de strook gaat weg, tint en al: haar vraag is beantwoord op het
+ *           moment dat de curve op het bord ligt. De twee namen bij de grenzen
+ *           gaan weg. De rijnamen worden kort. Beide handvatnamen gaan weg.
+ *           Blijft: de stapel, twee korte rijnamen, de naam van het stokje.
+ *   stap 3  het stokje heeft zijn naam niet meer nodig - hij wees er één van 96
+ *           aan alsof die bijzonder was. Blijft: de stapel, twee korte rijnamen
+ *           en, na Trainen, "hier begon jij". De stippellijn erbij is niet
+ *           langer een streep van rand tot rand: die las als een tweede,
+ *           rechter model.
+ *
+ * WAT ER MET DE WEGGEHAALDE GETALLEN GEBEURDE, want een getal weghalen is niet
+ * hetzelfde als een bijschrift weghalen.
+ *
+ *   0,20 en 0,80  blijven op het bord, maar als ASGETAL. De twee streepjeslijnen
+ *                 liggen precies op de y-tikken 0,2 en 0,8, die Canvas elke
+ *                 tiende tekent, dus wie het getal wil, leest het van de as. Een
+ *                 bijschrift dat een asgetal herhaalt, is een bijschrift te veel.
+ *   27 en 0,0000  blijven staan waar ze naar wijzen. Een tussenversie zette ze
+ *                 in het paneel, onder de legenda; op 900x700 is dat paneel maar
+ *                 518 px hoog en viel die regel er 14 px onder. Een gerekend
+ *                 getal onder de rand is hetzelfde defect als geen getal.
+ *
+ * EN HET PANEEL WERD ER KORTER VAN, niet langer, want tien bijschriften naar een
+ * paneel verhuizen is hetzelfde probleem met een ander adres. Gemeten scrollH op
+ * 1024x768, voor tegen na: stap 1 480 - 480, stap 2 502 - 502, stap 3 566 - 549.
+ *
  * WAT ER OP HET BORD STAAT, en waarom precies dit.
  *
- *   de x-as   de groenwaarde van één rij. Eén kenmerk, want alleen dan is de
+ *   de x-as   de kleurwaarde g van één rij. Eén kenmerk, want alleen dan is de
  *             S-curve te tekenen. Wat dat kost staat in stap 3 op het bord: de
  *             les gebruikt r, g en b samen en haalt daarmee bijna alles juist,
- *             met alleen groen blijven er rijen over die niet passen.
+ *             met alleen de g blijven er rijen over die niet passen.
  *   de y-as   het antwoord, gecodeerd zoals de les het codeert (slide
  *             2128358): Albert is 1 en staat bovenaan, Blahaj is 0 en staat
  *             onderaan. Vanaf stap 2 is dezelfde as ook de kans, en dat is
  *             precies het punt: de curve loopt van het ene antwoord naar het
  *             andere. De asnaam zegt daarom in stap 1 iets anders dan later.
- *   de curve  op elke groenwaarde geeft ze de kans op Albert.
+ *   de curve  op elke kleurwaarde g geeft ze de kans op Albert.
  *   twee
  *   streepjes de grenzen 0,20 en 0,80. Niet van dit bord maar van de les zelf
- *             (slide 2128364).
+ *             (slide 2128364). Zonder bijschrift: ze liggen op de y-tikken 0,2
+ *             en 0,8, dus het getal staat er al langs de as.
  *   stokjes   van elke rij naar de curve. De lengte is hoever het model bij
  *             die rij vandaan zit - hetzelfde plaatje als "Teken de lijn" van
  *             les 1, zodat les 3 daarop voortbouwt.
@@ -97,11 +141,22 @@ import {
  * y-positie plus het woord langs de as, nooit aan kleur. Kleur is alleen voor
  * de drie banden, en die hebben elk ook hun eigen vorm en hun eigen telling.
  *
- * DE WOORDEN, en waar ze vandaan komen. Geteld over alle 77 slides van les 3:
+ * DE WOORDEN, en waar ze vandaan komen. Geteld over alle 78 slides van les 3
+ * (lesson 4496, geteld op 2026-09-09):
  *
- *   `kleurwaarde`  36 keer, `groen` NUL keer. Vandaar dat stap 1 de x-as één
- *                  keer uitlegt als "de g van (r,g,b)": zo heet het op slide
- *                  2127647. Daarna heet het overal `groenwaarde`, één woord.
+ *   `kleurwaarde`  37 keer, `groen` NUL keer. Het bord zei eerst
+ *                  `groenwaarde`, en dat was één begrip met twee woorden: het
+ *                  ene op het bord, het andere op elke slide. Het heet hier nu
+ *                  overal `kleurwaarde g`. `kleurwaarde` is het woord van de
+ *                  les - de slide die naar dit bord linkt (2127699) zegt zelf
+ *                  "van één kleurwaarde" - en de losse `g` komt van slide
+ *                  2127647, waar de les (r,g,b) uitlegt en haar eigen code
+ *                  `g = float(rgb[1])` schrijft. Die g moet erbij: de les
+ *                  gebruikt `kleurwaarden` 36 van de 37 keer over alle drie
+ *                  tegelijk, en dit bord tekent er één. In de code heet het
+ *                  veld nog `rij.groen`; dat staat in logistiek.ts, ziet geen
+ *                  enkele leerling, en gaat mee zodra dat bestand aan de beurt
+ *                  is.
  *   `twijfel`      1 keer, slide 2127771 ("Twijfelt het, dan kiest het vaker
  *                  voor een mijn"), en in exact deze betekenis.
  *   `zeker`        slide 2127649: "het model is niet zeker genoeg". Vandaar
@@ -123,12 +178,12 @@ import {
  * GEMETEN op 1024x768, uit de eigen constanten van Canvas (PAD 26/26/42/58,
  * RAIL_W 48, KEEP 0,66) met twee panelen links: ins.left 288, dus safe.left
  * 336, safe.right 26, safe.top 26, safe.bottom 48. Dat laat 662 bij 694 px
- * plotvlak. Met dit venster wordt dat 719,6 px per eenheid groen en 588,1 px
+ * plotvlak. Met dit venster wordt dat 719,6 px per eenheid kleurwaarde g en 588,1 px
  * per eenheid kans, en dan:
  *
- *   de S stijgt van kans 0,01 naar 0,99 over 0,2649 groen = 191 px, dus ze
+ *   de S stijgt van kans 0,01 naar 0,99 over 0,2649 kleurwaarde g = 191 px, dus ze
  *     leest als een curve en nooit als een trap;
- *   de stapel op groen 0,0000 staat op x = 379 px, 54 px vrij van het paneel
+ *   de stapel op kleurwaarde g 0,0000 staat op x = 379 px, 54 px vrij van het paneel
  *     en van de zoomknoppen ernaast;
  *   de twee rijen merken liggen 588 px uit elkaar, de twee streepjeslijnen 353.
  *
@@ -245,8 +300,8 @@ export default function VanGetalNaarKans() {
 
   const teZoeken = useMemo(() => trainStappen(curve).length > 0, [curve])
 
-  /** Twee rijen zijn dezelfde rij als groenwaarde en antwoord kloppen. In de
-   *  strook is elke groenwaarde uniek - de enige dubbele groep in het bestand
+  /** Twee rijen zijn dezelfde rij als kleurwaarde g en antwoord kloppen. In de
+   *  strook is elke kleurwaarde g uniek - de enige dubbele groep in het bestand
    *  staat op 0,0000 - dus dit wijst altijd precies één merk aan. */
   const zelfdeRij = (a: Rij, b: Rij) => a.groen === b.groen && a.albert === b.albert
 
@@ -262,6 +317,7 @@ export default function VanGetalNaarKans() {
    *  leerling twee keer op rij, dan beweegt de curve niet meer en zou de
    *  stippellijn precies onder de curve liggen. */
   const toonBegin =
+    stap === 2 &&
     beginCurve !== null &&
     (Math.abs(beginCurve.m - curve.m) > 0.004 ||
       Math.abs(kansVanHandvat(beginCurve) - hoogte) > 0.01)
@@ -270,7 +326,7 @@ export default function VanGetalNaarKans() {
     <div className="relative h-full w-full">
       <Canvas
         defaultView={DEFAULT_VIEW}
-        xLabel="groenwaarde van de rij"
+        xLabel="kleurwaarde g van de rij"
         /* In stap 1 staat er nog geen curve, dus is deze as alleen het
            antwoord. Een as die dan al "kans" heet, belooft iets wat er niet
            staat. */
@@ -278,15 +334,34 @@ export default function VanGetalNaarKans() {
       >
         {(s) => (
           <>
-            {/* De strook staat er in elke stap, want ze is de reden dat dit
-                bord bestaat. Onderaan de tekenlaag, zodat elk merk erover ligt. */}
-            <Strook scales={s} />
+            {/* DE STROOK GAAT WEG ZODRA DE CURVE ER STAAT. Ze bestaat om één
+                vraag te stellen - waarom is hier een curve voor nodig - en die
+                vraag is beantwoord op het moment dat het antwoord op het bord
+                ligt. Vanaf stap 2 staat hetzelfde feit er beter: die zes rijen
+                zijn dan precies de ringen en de vierkantjes, en die worden in
+                het paneel geteld. Een getinte strook zonder naam is erger dan
+                geen strook, dus gaat de tint mee weg en niet alleen de tekst. */}
+            {!heeftCurve && <Strook scales={s} />}
 
             {heeftCurve && (
               <>
-                {/* De grenzen van de les: 0,20 en 0,80. */}
-                <Bandlijn kans={BAND_HOOG} woorden="zeker Albert vanaf" scales={s} />
-                <Bandlijn kans={BAND_LAAG} woorden="zeker Blahaj tot" scales={s} />
+                {/* De grenzen van de les: 0,20 en 0,80. De twee streepjeslijnen
+                    zijn de zichtbare oorzaak van de drie vormen, dus blijven ze
+                    staan. Hun NAMEN niet: die gaan over grenzen leggen, en dat
+                    is de vraag van het andere bord van deze les.
+
+                    WAAR DE TWEE GETALLEN GEBLEVEN ZIJN: op de y-as, en nergens
+                    anders. Niet in het paneel - dat telt de drie vormen met hun
+                    woord erbij en noemt geen enkele grens. De gemeten pixels
+                    staan bij Bandlijn hieronder, samen met het geval waarin het
+                    asgetal wél wegvalt. Wat een leerling daarmee NIET meer op
+                    het bord krijgt, is de zin die de lijn aan het woord "zeker"
+                    knoopt. Dat de ringen tussen de lijnen liggen en de
+                    vierkantjes erbuiten, moet hij nu zelf zien. Dat is de prijs
+                    van het budget van vier, en ze is bewust betaald - niet
+                    vergeten. */}
+                <Bandlijn kans={BAND_HOOG} scales={s} />
+                <Bandlijn kans={BAND_LAAG} scales={s} />
                 <Stokjes curve={curve} scales={s} />
               </>
             )}
@@ -304,15 +379,24 @@ export default function VanGetalNaarKans() {
               />
             ))}
 
+            {/* De stapel blijft in elke stap staan. Ze past binnen het budget
+                van vier, en ze hoort bij haar eigen merk: het bord tekent 70
+                merken en het paneel rekent over 96, en dit label is het enige
+                dat dat verschil verklaart. Naar het paneel verhuizen kostte daar
+                een regel die op 900x700 juist onder de rand van het paneel viel,
+                dus dan was het getal nergens meer te lezen. */}
             <Stapelnaam curve={heeftCurve ? curve : null} scales={s} />
-            <Rijnamen scales={s} />
+            <Rijnamen kort={heeftCurve} scales={s} />
 
             {heeftCurve && (
               <>
                 {/* Wat een stokje IS, bij het langste stokje van het moment.
                     Zonder deze naam staan er 96 oranje streepjes op het bord
-                    die niets zeggen. */}
-                <Foutnaam rij={slechtste} curve={curve} scales={s} />
+                    die niets zeggen. Alleen in stap 2: dat is de stap waarin een
+                    stokje wordt uitgelegd. In stap 3 kijkt de leerling naar de
+                    zoektocht, en dan wijst deze naam één van de 96 stokjes aan
+                    alsof dat er een is die het meer doet dan de rest. */}
+                {stap === 1 && <Foutnaam rij={slechtste} curve={curve} scales={s} />}
 
                 {/* Het tweede handvat eerst, zodat het eerste bovenaan ligt: dat
                     is het handvat dat een leerling het eerst pakt. */}
@@ -341,7 +425,21 @@ export default function VanGetalNaarKans() {
                   onMove={(p) => zetCurve({ ...curve, m: clamp(p.x, M_MIN, M_MAX) })}
                 />
 
-                <Handvatnamen curve={curve} hoogte={hoogte} scales={s} />
+                {/*
+                  GEEN NAAM MEER BIJ DE HANDVATTEN. Er stonden er twee - "kans
+                  0,50 bij groen 0,45" en "hier is de kans al 0,54" - en die
+                  deden hetzelfde werk: een punt van de curve voorlezen. Twee
+                  labels voor één taak zijn twee labels, dus moest er één weg.
+                  De tweede ging daarna ook weg, en dat is de scherpere keuze:
+                  wat 0,50 betekent, is waar het antwoord omslaat, en omslagpunt
+                  kiezen is de vraag van het ANDERE bord van les 3. Op dit bord
+                  bouw je de curve, je knipt hem niet door.
+
+                  Slepen blijft zichtbaar iets doen zonder die labels: de curve
+                  beweegt, alle 96 stokjes veranderen van lengte, de drie
+                  tellingen in het paneel lopen mee en de zekerheid erboven ook.
+                  Dat is vier zichtbare gevolgen per sleep, allemaal gerekend.
+                */}
               </>
             )}
 
@@ -373,6 +471,17 @@ export default function VanGetalNaarKans() {
         de eerste alinea weg, en op de beamervloer is dat precies waar een
         leerling zonder leerkracht zit. De uitleg staat daarom in het paneel
         eronder, dat nooit inklapt.
+
+        EN DAAROM STAAT ER OOK GEEN OPDRACHT MEER IN. Er stond een derde alinea,
+        "Volg de drie stappen in het paneel linksonder." - de enige zin die zei
+        wat je eerst doet, en precies onder 1280 px staat die niet in de DOM.
+        Ze is niet naar boven gehaald maar geschrapt, want ze zegt wat er al te
+        zien is: het paneel opent met de drie stappen als genummerde lijst, met
+        stap 1 gevuld en vet en de twee volgende grijs, daaronder de uitleg van
+        stap 1 en de knop "Zet de curve erbij". Dat lijstje staat er op elk
+        formaat, want het paneel klapt nooit in. Een zin die een zichtbare lijst
+        navertelt, is geen instructie maar ruis - en hier stond ze bovendien op
+        de beamer nergens.
       */}
       <Brief eyebrow="mAIstros 2 - les 3, oefening 1" title="Van getal naar kans">
         {/* EEN ZIN, en dat is gemeten: met een tweede zin erbij werd deze Brief
@@ -380,15 +489,29 @@ export default function VanGetalNaarKans() {
             DOEN staat in dat paneel, in de stap die open staat, en dat paneel
             klapt nooit in.
 
-            De herformulering blijft binnen dat budget, want ze is even hoog als
-            de zin die er stond: twee regels, 47,1 px, gemeten voor en na op
-            1024x768 en op 900x700. De Brief blijft 140,1 px ingeklapt en 207,1
-            px uitgeklapt, en de overlap met het paneel eronder is 0 px op
-            900x700, 1024x768, 1280x720, 1280x800, 1366x768 en 1440x900. De
-            tweede alinea idem: 45,5 px voor en na. */}
+            De eerste alinea is twee regels van samen 47,1 px, de tweede 45,5
+            px. Alles hieronder is opnieuw gemeten NA het schrappen van de derde
+            alinea, en per formaat, want onder 1280 px is de Brief 16rem breed
+            en daarboven 22rem:
+
+              onder 1280 px staat ze ingeklapt, dus met alleen de eerste alinea:
+                140,1 px, exact zoals ervoor. Schrappen verandert daar niets,
+                want die zin stond er toch al niet in de DOM. De ruimte tot het
+                paneel eronder blijft 113,9 px op 1024x768, en op 900x700 45,9
+                px in stap 1, 24,0 px in stap 2 en 7,9 px in stap 3. Geen
+                overlap, op geen van de drie stappen.
+              klapt een leerling ze op 900x700 zelf uit, dan is ze nu 216,4 px
+                in plaats van 269,9 px, en legt ze in stap 1 30,4 px over het
+                paneel in plaats van 83,9 px (dat tweede getal gerekend uit
+                dezelfde twee gemeten hoogtes). Dat is dus geen 0 - en het was
+                het ook nooit: de oude regel hier zei "0 px op 900x700", en dat
+                gold voor de INGEKLAPTE stand, de enige die je daar zonder
+                klikken krijgt.
+              vanaf 1280 px staat ze uitgeklapt: 176,4 px met 47,5 px ruimte tot
+                het paneel, tegen 207,1 px en 16,8 px met de geschrapte zin
+                erbij. Op 1440x900 is die ruimte 227,5 px. */}
         <p>Jij bouwt zelf de curve die van een getal een kans maakt.</p>
         <p>Dat getal is de kans dat de rij bij Albert hoort. Dit heet logistische regressie.</p>
-        <p>Volg de drie stappen in het paneel linksonder.</p>
       </Brief>
 
       {/*
@@ -414,20 +537,30 @@ export default function VanGetalNaarKans() {
               {/* De codering van de les, in de woorden van de les: slide 2128358
                   doet het met eetbaar 1 en giftig 0. */}
               <p>De les maakt van het antwoord een getal: Albert wordt 1, Blahaj wordt 0.</p>
-              <p>Elke rij staat op haar groenwaarde: de g van (r,g,b).</p>
+              <p>Elke rij staat op haar kleurwaarde g: de g uit (r,g,b).</p>
             </>
           )}
           {stap === 1 && (
             <>
               <p>De curve geeft elke rij een getal tussen 0 en 1: de kans op Albert.</p>
               <p>Een stokje is de fout van een rij: zoveel zit de curve ernaast.</p>
+              {/* ÉÉN REGEL, en het bleef er één toen de tweede handvatnaam van
+                  het bord ging. "De twee handvatten" zegt al dat er twee zijn,
+                  en welke kant ze op gaan hoeft er niet bij: elk handvat is op
+                  één as vastgezet en de curve verandert bij de eerste beweging,
+                  dus de leerling weet het na één sleep. Twee extra regels hier
+                  kostten 34 px, en dat was precies de ruimte waardoor de drie
+                  tellingen op 900x700 onder de rand van het paneel zakten. */}
               <p>Sleep de twee handvatten tot de stokjes kort zijn.</p>
             </>
           )}
           {stap === 2 && (
             <>
               <p>De computer begint bij jouw curve en zoekt verder.</p>
-              <p>Kijk mee: de zekerheid zakt onderweg nooit.</p>
+              {/* "Kijk mee:" stond hiervoor, en het was twee regels waard voor
+                  niets: de knop heet Trainen en de zekerheid staat eronder, dus
+                  meekijken is niet iets wat een leerling moet worden gezegd. */}
+              <p>De zekerheid zakt onderweg nooit.</p>
               {/*
                 GEEN TELLING VAN DE JUISTE RIJEN, en dat is geen plaatsgebrek.
                 Hoeveel rijen juist staan, hangt alleen van de PLEK van de curve
@@ -511,7 +644,7 @@ export default function VanGetalNaarKans() {
             geen band, en zijn alle merken hetzelfde.
 
             De kop zegt 96, en het bord tekent 70 merken: dat verschil is de
-            stapel op groen 0,0000, en die staat op het bord met zijn telling
+            stapel op kleurwaarde g 0,0000, en die staat op het bord met zijn telling
             erbij. Zonder deze kop zou een leerling de merken kunnen tellen en
             uitkomen op iets anders dan waar de zekerheid over rekent. */}
         {heeftCurve && (
@@ -530,7 +663,7 @@ export default function VanGetalNaarKans() {
         {/*
           DE TABEL: de tabel is het bestand, de grafiek is het plaatje van het
           bestand. Dit zijn exact de zes rijen uit de strook op het bord, en wie
-          op een groenwaarde klikt, ziet welk merk erbij hoort.
+          op een kleurwaarde g klikt, ziet welk merk erbij hoort.
 
           ZE STAAT IN STAP 1, want daar doet ze het werk: op het bord liggen de
           twee Blahaj op 0,2753 en 0,2756 anderhalve pixel van elkaar en tussen
@@ -547,7 +680,7 @@ export default function VanGetalNaarKans() {
             <table className="mt-1 w-full text-[12.5px] tabular-nums">
               <thead>
                 <tr className="text-left text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
-                  <th className="py-0.5 font-semibold">groen</th>
+                  <th className="py-0.5 font-semibold">kleurwaarde g</th>
                   <th className="py-0.5 font-semibold">antwoord</th>
                 </tr>
               </thead>
@@ -581,7 +714,7 @@ export default function VanGetalNaarKans() {
           tabelrij, nooit een knop en nooit de vaststelling.
         */}
         {stap === 2 && (
-          <div className="mt-2.5 space-y-1.5 text-[11.5px] leading-relaxed text-muted">
+          <div className="mt-2 space-y-1 text-[11.5px] leading-relaxed text-muted">
             <p>
               In je notebook zoekt <PyChip>LogisticRegression()</PyChip> deze curve voor jou. De les
               noemt haar de logistische functie.
@@ -670,8 +803,8 @@ function Merk({
       )}
       <title>
         {curve
-          ? `groen ${getal(rij.groen, 4)}, ${rij.albert ? 'Albert' : 'Blahaj'} - de curve geeft deze rij ${getal(kansOpEigenAntwoord(rij, curve), 2)} kans op haar eigen antwoord`
-          : `groen ${getal(rij.groen, 4)}, ${rij.albert ? 'Albert' : 'Blahaj'}`}
+          ? `kleurwaarde g ${getal(rij.groen, 4)}, ${rij.albert ? 'Albert' : 'Blahaj'} - de curve geeft deze rij ${getal(kansOpEigenAntwoord(rij, curve), 2)} kans op haar eigen antwoord`
+          : `kleurwaarde g ${getal(rij.groen, 4)}, ${rij.albert ? 'Albert' : 'Blahaj'}`}
       </title>
     </g>
   )
@@ -703,9 +836,31 @@ function Stokjes({ curve, scales: s }: { curve: Curve; scales: Scales }) {
   )
 }
 
+/**
+ * HOE BREED DE STIPPELLIJN VAN DE BEGINSTAND WORDT GETEKEND.
+ *
+ * Ze liep eerst van rand tot rand, en dat was het probleem: de startcurve is
+ * bewust flauw (steilheid 3), dus over de 0,92 kleurwaarde g die in beeld staat klimt
+ * ze van kans 0,25 naar 0,76 in een bijna rechte schuine streep. Naast de
+ * getrainde S leest zo'n streep als een TWEEDE model, en op het bord van les 1
+ * en les 2 is een rechte lijn ook echt een model. Ze wordt daarom een stukje:
+ * een kort stuk curve rond haar eigen 0,50, want dat is precies waar "hier
+ * begon jij" boven hangt en het enige dat deze stippellijn hoeft te zeggen.
+ *
+ * De halve breedte is het kleinste van twee dingen. Het stuk tussen de twee
+ * grenzen van de les (kans 0,20 tot 0,80, dus ln(4)/steilheid), zodat een
+ * steile beginstand een smal stukje krijgt en niet een streep. En 0,09
+ * kleurwaarde g, zodat een flauwe beginstand niet alsnog het halve bord vult.
+ * Een ondergrens hoort er ook bij, anders wordt een zeer steile beginstand een
+ * punt.
+ */
+const BEGIN_HALF_MAX = 0.09
+const BEGIN_HALF_MIN = 0.035
+
 /** De curve zelf, over de hele zichtbare breedte van het bord. `begin` tekent
  *  de curve waar de leerling de zoektocht mee begon: gestippeld, in de
- *  bijschriftkleur, dus ze kan nooit voor de curve van nu doorgaan. */
+ *  bijschriftkleur en als kort stukje, dus ze kan nooit voor de curve van nu
+ *  doorgaan. */
 function Kromme({
   curve,
   scales: s,
@@ -715,7 +870,17 @@ function Kromme({
   scales: Scales
   begin?: boolean
 }) {
-  const { x0, x1 } = s.view
+  let x0 = s.view.x0
+  let x1 = s.view.x1
+  if (begin) {
+    const half = Math.min(
+      BEGIN_HALF_MAX,
+      Math.max(BEGIN_HALF_MIN, Math.log(4) / Math.max(curve.k, 1e-6)),
+    )
+    x0 = Math.max(x0, curve.m - half)
+    x1 = Math.min(x1, curve.m + half)
+    if (x1 <= x0) return null
+  }
   // Eén punt per twee pixels. Bij de steilste stand die een handvat kan halen
   // stijgt de S van kans 0,01 naar 0,99 over 86 px, dus staan daar nog 43
   // punten in: rond genoeg, en het kost niets.
@@ -792,47 +957,49 @@ function Strook({ scales: s }: { scales: Scales }) {
 }
 
 /**
- * Een van de twee grenzen van de les, met zijn woorden erbij.
+ * Een van de twee grenzen van de les (slide 2128364), als streepjeslijn.
  *
- * Het getal in het label komt uit BAND_HOOG en BAND_LAAG en staat niet in de
- * tekst. Dat is geen kleinigheid: die twee grenzen zijn van de les (slide
- * 2128364), en zodra ze in het label ook nog eens ingetypt staan, kan het bord
- * iets anders tellen dan het zegt.
+ * ZONDER NAAM, en dat is de bewuste keuze van deze ronde. De lijn is de
+ * zichtbare oorzaak van de drie vormen op het bord - volle stip, open ring,
+ * vierkantje - en die vormen worden in het paneel geteld met hun woord erbij.
+ * De namen die hier stonden ("zeker Albert vanaf 0,80", "zeker Blahaj tot
+ * 0,20") legden uit hoe je een grens leest, en dat is de vraag van het andere
+ * bord van les 3. Ze stonden dus in elke stap in beeld zonder er in één ervan
+ * werk te doen.
+ *
+ * De twee getallen staan daarna op de Y-AS en niet in het paneel. Het paneel
+ * noemt geen enkele grens: daar staan de drie vormen met hun woord en hun
+ * telling, en verder niets. Dus wie het getal van een streepjeslijn wil, leest
+ * het van de as, en NERGENS ANDERS. Als een commentaar hier ooit beweert dat de
+ * grenzen "in het paneel, bij de legenda" staan, is dat commentaar fout en niet
+ * de code: er is geen legendaregel met 0,20 of 0,80 in.
+ *
+ * HERMETEN op 2026-09-09, in de openingsstand, met canvas measureText door
+ * getScreenCTM: de lijnen liggen op y 196,6 en 549,4 en het midden van de
+ * asgetallen "0,8" en "0,2" op 196,9 en 549,8, dus 0,3 px ernaast. Op 900x700
+ * de lijnen op 179,8 en 498,2 tegen asgetallen op 180,2 en 498,5. Op beide
+ * beamerformaten staat de tikstap op 0,1 of 0,2, dus 0,2 en 0,8 zijn er echt.
+ *
+ * EEN PRIJS DIE ERBIJ HOORT: zoomt een leerling drie keer uit, dan wordt de
+ * tikstap 0,5 en staan alleen 0,0, 0,5, 1,0 en 1,5 langs de as - gemeten. De
+ * twee lijnen blijven dan staan zonder getal ernaast. "Alles" zet het beeld
+ * terug en de getallen komen mee. Dat is de prijs van het budget van vier
+ * bijschriften, en een vijfde bijschrift is ze niet waard.
  */
-function Bandlijn({
-  kans,
-  woorden,
-  scales: s,
-}: {
-  kans: number
-  woorden: string
-  scales: Scales
-}) {
+function Bandlijn({ kans, scales: s }: { kans: number; scales: Scales }) {
   const y = s.sy(kans)
   return (
-    <g pointerEvents="none">
-      <line
-        x1={s.area.left}
-        y1={y}
-        x2={s.area.right}
-        y2={y}
-        stroke={MUTED}
-        strokeWidth={1.25}
-        strokeDasharray="5 5"
-        opacity={0.75}
-      />
-      <text
-        x={s.safe.right - 14}
-        y={y - 7}
-        textAnchor="end"
-        fontSize={13}
-        fontWeight={700}
-        fill={MUTED}
-        {...HALO}
-      >
-        {`${woorden} ${getal(kans, 2)}`}
-      </text>
-    </g>
+    <line
+      x1={s.area.left}
+      y1={y}
+      x2={s.area.right}
+      y2={y}
+      stroke={MUTED}
+      strokeWidth={1.25}
+      strokeDasharray="5 5"
+      opacity={0.75}
+      pointerEvents="none"
+    />
   )
 }
 
@@ -854,11 +1021,11 @@ const BEREIK = (() => {
  * Welke rij welke is. Zonder deze twee regels moet een leerling de klasse uit
  * de hoogte raden, en dan draagt de y-as betekenis die nergens staat.
  */
-function Rijnamen({ scales: s }: { scales: Scales }) {
+function Rijnamen({ kort, scales: s }: { kort: boolean; scales: Scales }) {
   return (
     <g pointerEvents="none">
-      <Rijnaam albert scales={s} />
-      <Rijnaam albert={false} scales={s} />
+      <Rijnaam albert kort={kort} scales={s} />
+      <Rijnaam albert={false} kort={kort} scales={s} />
     </g>
   )
 }
@@ -886,7 +1053,7 @@ function Rijnamen({ scales: s }: { scales: Scales }) {
  * van het vrije vlak tot het eerste of laatste merk van die rij, met een naam
  * van 171 px ernaast gelegd:
  *
- *   Blahaj loopt tot groen 0,2756 en houdt RECHTS 420,5 px vrij op 1024x768 en
+ *   Blahaj loopt tot kleurwaarde g 0,2756 en houdt RECHTS 420,5 px vrij op 1024x768 en
  *     341,7 px op 900x700;
  *   Albert loopt vanaf 0,2178 en houdt LINKS 199,9 px vrij op 1024x768 en
  *     162,5 px op 900x700, dus die naam blijft staan waar hij stond.
@@ -896,8 +1063,24 @@ function Rijnamen({ scales: s }: { scales: Scales }) {
  * inkt over zijn eigen merken en raakt ze nooit. Het vrije uiteinde bepaalt
  * alleen aan welke kant de naam bij zijn rij hoort, en houdt hem weg van het
  * dichtste stuk ervan.
+ *
+ * VANAF STAP 2 KORT. Deze twee namen zijn de leessleutel van de y-as en horen
+ * dus in elke stap op het bord. Maar hun werk in stap 1 is de CODERING
+ * uitleggen, en dat is één keer nodig; de telling erbij (52 en 44) is naslag
+ * die het paneel al met 96 dekt. Kort blijft de codering staan - "Albert is 1"
+ * en "Blahaj is 0" - en dat is 171 px die 65 px wordt, precies in de hoek waar
+ * in stap 2 de stokjes en de handvatnaam bij komen. Het is een inkorting en
+ * geen ander woord: Albert blijft Albert en 1 blijft 1.
  */
-function Rijnaam({ albert, scales: s }: { albert: boolean; scales: Scales }) {
+function Rijnaam({
+  albert,
+  kort,
+  scales: s,
+}: {
+  albert: boolean
+  kort: boolean
+  scales: Scales
+}) {
   const { eerste, laatste } = albert ? BEREIK.albert : BEREIK.blahaj
   const naarLinks = s.sx(eerste) - s.safe.left >= s.safe.right - s.sx(laatste)
   return (
@@ -910,15 +1093,19 @@ function Rijnaam({ albert, scales: s }: { albert: boolean; scales: Scales }) {
       fill={INK}
       {...HALO}
     >
-      {albert
-        ? `Albert, antwoord 1 (${getal(AANTAL_ALBERT)} rijen)`
-        : `Blahaj, antwoord 0 (${getal(AANTAL_BLAHAJ)} rijen)`}
+      {kort
+        ? albert
+          ? 'Albert is 1'
+          : 'Blahaj is 0'
+        : albert
+          ? `Albert, antwoord 1 (${getal(AANTAL_ALBERT)} rijen)`
+          : `Blahaj, antwoord 0 (${getal(AANTAL_BLAHAJ)} rijen)`}
     </text>
   )
 }
 
 /**
- * DE STAPEL. 27 van de 96 rijen hebben groenwaarde 0,0000 en vallen dus op één
+ * DE STAPEL. 27 van de 96 rijen hebben kleurwaarde g 0,0000 en vallen dus op één
  * merk. Zonder dit label tekent het bord 70 merken terwijl het paneel over 96
  * rijen rekent, en dat is precies het soort stille tegenspraak dat een leerling
  * ziet zonder het te kunnen benoemen. Niet op te lossen met een spatje toeval
@@ -926,7 +1113,7 @@ function Rijnaam({ albert, scales: s }: { albert: boolean; scales: Scales }) {
  *
  * Het label staat BOVEN zijn eigen merk en niet ernaast. Ernaast lag het op zes
  * andere merken: op 1024 px staan de rijen 0,0095 tot 0,1013 binnen 73 px van
- * groen 0, en de tekst is 72 px breed. Boven het merk loopt alleen zijn eigen
+ * kleurwaarde g 0, en de tekst is 72 px breed. Boven het merk loopt alleen zijn eigen
  * stokje, en dat is precies het merk waar het label bij hoort.
  *
  * En het WIJKT, net als de namen van de handvatten hieronder, in plaats van te
@@ -936,6 +1123,13 @@ function Rijnaam({ albert, scales: s }: { albert: boolean; scales: Scales }) {
  * bord dan 70 merken zonder ergens te zeggen dat er 27 op elkaar liggen. Nu
  * hangt de tekst rechts van zijn merk zodra ze links niet meer past, en links
  * ervan aan de andere rand.
+ *
+ * IN ELKE STAP, en dat is gemeten en niet gevoeld. De verleiding was om dit
+ * label ook op te ruimen en het getal in het paneel te zetten, onder de legenda
+ * die over 96 rijen rekent. Op 1024x768 kon dat; op 900x700 is het paneel maar
+ * 518 px hoog en viel die regel er 14 px onder, dus stond het getal daar nergens
+ * meer. Het label kost hier 8 tekens naast zijn eigen merk en past ruim binnen
+ * het budget van vier, dus blijft het staan waar het naar wijst.
  */
 function Stapelnaam({ curve, scales: s }: { curve: Curve | null; scales: Scales }) {
   const cx = s.sx(STAPEL.groen)
@@ -1023,66 +1217,6 @@ function Beginnaam({ curve, scales: s }: { curve: Curve; scales: Scales }) {
   )
 }
 
-/**
- * Wat de twee handvatten NU zeggen. Geen opdracht - dat staat in het paneel -
- * maar de stand zelf, en die is uit de curve gerekend.
- *
- * Het eerste handvat leest als de plek waar de kans door 0,50 gaat, en dat is
- * ook de grens tussen de twee antwoorden. Het tweede leest als de kans een klein
- * eindje verder, en dat IS de steilheid, zonder er een formule bij te halen.
- */
-function Handvatnamen({
-  curve,
-  hoogte,
-  scales: s,
-}: {
-  curve: Curve
-  hoogte: number
-  scales: Scales
-}) {
-  const mx = s.sx(curve.m)
-  const hx = s.sx(curve.m + OFFSET)
-  // Naar links wijken zodra de tekst het vrije vlak uit zou lopen.
-  const rechtsRuimte = s.safe.right - (hx + 14) > 190
-  /*
-   * De tekst van het eerste handvat is 190 px breed en staat gecentreerd, dus
-   * ze zou vanaf 95 px van de rand het vrije vlak uit lopen en op een paneel
-   * belanden. Ze WIJKT dan naar de rand in plaats van te verdwijnen: waar de
-   * curve door 0,50 gaat, is de toestand van dit bord, en toestand hoort te
-   * blijven staan. Verdwijnen deed ze wel in de eerste versie, en dat viel op
-   * bij het slepen naar links: dan zag een leerling het getal weggaan precies
-   * op het moment dat hij het veranderde.
-   */
-  const mAnker = mx < s.safe.left + 95 ? 'start' : mx > s.safe.right - 95 ? 'end' : 'middle'
-  const mx2 = mAnker === 'start' ? s.safe.left + 8 : mAnker === 'end' ? s.safe.right - 8 : mx
-  return (
-    <g pointerEvents="none">
-      <text
-        x={mx2}
-        y={s.sy(0.5) + 30}
-        textAnchor={mAnker}
-        fontSize={13.5}
-        fontWeight={700}
-        fill={MODEL}
-        {...HALO}
-      >
-        {`kans 0,50 bij groen ${getal(curve.m, 2)}`}
-      </text>
-      <text
-        x={rechtsRuimte ? hx + 14 : hx - 14}
-        y={s.sy(hoogte) - 16}
-        textAnchor={rechtsRuimte ? 'start' : 'end'}
-        fontSize={13.5}
-        fontWeight={700}
-        fill={MODEL}
-        {...HALO}
-      >
-        {`hier is de kans al ${getal(hoogte, 2)}`}
-      </text>
-    </g>
-  )
-}
-
 /* ----------------------------- het paneel --------------------------- */
 
 /** Eén band: zijn eigen vorm, zijn eigen kleur, zijn eigen woord, zijn eigen
@@ -1107,7 +1241,7 @@ function Bandregel({ band, woord, aantal }: { band: Band; woord: string; aantal:
   )
 }
 
-/** Eén rij van de tabel: haar groenwaarde en haar echte antwoord. Een knop en
+/** Eén rij van de tabel: haar kleurwaarde g en haar echte antwoord. Een knop en
  *  geen sleepbaar merk, dus er is hier geen verwarring tussen klikken en
  *  slepen mogelijk. */
 function Tabelrij({

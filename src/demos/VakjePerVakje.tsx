@@ -596,11 +596,57 @@ export default function VakjePerVakje() {
    * Tijdens het optellen staat hier het getal van het rijtje dat net binnenkwam
    * en NOOIT een winnaar: halverwege leidt bij 118 van de 120 beeldjes een
    * ander cijfer dan het uiteindelijke antwoord.
+   *
+   * DE REGEL WISTE ZICHZELF UIT ZODRA JE HAAR OPVOLGDE, en dat is het gebrek
+   * dat hier gerepareerd is. In rust stond er "Sleep naar rijtje 21: cijfer 7
+   * op kop." Sleepte de leerling daarheen, dan werd het "Rijtje 21 bracht +1,14
+   * bij." - de bewering die hij ging controleren, was weg op het moment dat hij
+   * aankwam om ze te controleren. Dan is de reis niets waard.
+   *
+   * De reparatie kost GEEN vijfde bijschrift op het bord: dezelfde ene regel in
+   * hetzelfde paneel krijgt één toestand erbij. Staat er op het rijtje waar de
+   * leerling nu staat een ander cijfer bovenaan dan het uiteindelijke antwoord,
+   * dan zegt de regel dat, met beide cijfers erin. Staat het antwoord er al
+   * bovenaan, dan is er niets bijzonders te melden en staat er weer het getal
+   * van het rijtje dat net binnenkwam.
+   *
+   * Dat spreekt de regel hierboven niet tegen. "Op kop" is niet het antwoord van
+   * het model maar de stand van nu, en die is op het bord af te lezen: de
+   * langste balk. Het bord noemt op dat moment nog altijd geen winnaar - de
+   * antwoordregel zegt "nog 7 rijtjes te gaan" en niets meer.
+   *
+   * MAAR ER STOND ", NIET 5." ACHTER, en dat moest eraf. Die 5 was `gekozen`,
+   * het uiteindelijke antwoord van het model, en dat is precies de winnaar die
+   * deze regel hierboven belooft niet te noemen. Bij het openingsbeeldje viel
+   * het niet op, want daar kiest het model 5 en staat "het echte cijfer: 5" al
+   * op het bord. Gemeten in de stand "1 pixel omhoog en naar links", waar het
+   * model 3 kiest terwijl het echte cijfer 5 is: op rijtje 14 van de 28 zei
+   * deze regel "Rijtje 14: cijfer 7 op kop, niet 3." terwijl het bord alleen
+   * "nog 14 rijtjes te gaan" en "het echte cijfer: 5" toonde. Die 3 stond
+   * nergens anders op het scherm. Halverwege de optelling wist de leerling dus
+   * al waar ze uitkomt - en juist de verschoven standen zijn de standen waar
+   * dit bord om draait.
+   *
+   * Zonder die staart doet de regel zijn werk nog: in rust belooft ze rijtje
+   * 21 met cijfer 7 op kop, en op rijtje 21 staat er "Rijtje 21: cijfer 7 op
+   * kop." Dat is dezelfde bewering, woord voor woord, op de plaats waar je ze
+   * kunt controleren. Het antwoord komt bij het laatste rijtje, waar het hoort.
+   *
+   * De maat blijft één regel, en ze werd korter: de langste variant hier is nu
+   * "Rijtje 21: cijfer 7 op kop." op 27 tekens, tegen de 38 van de rustregel
+   * die al paste in de 222 px van dit paneel.
    * ---------------------------------------------------------------- */
+  /** Welk cijfer op dit rijtje bovenaan staat. Op rijtje 0 staan alle tien de
+   *  balken op nul, dus daar is een koploper afrondingsruis - zie
+   *  `laatsteAndereKoploper()` in lib/mnist.ts, die om dezelfde reden bij 1
+   *  begint. */
+  const kopNu = model && rijtje > 0 ? keuze(nuTotalen) : null
   const handvatRegel = !klaar
     ? rijtje === 0
       ? 'Nog niets opgeteld.'
-      : `Rijtje ${getal(rijtje)} bracht ${metTeken(bijdrageRijtje)} bij.`
+      : kopNu !== null && kopNu !== gekozen
+        ? `Rijtje ${getal(rijtje)}: cijfer ${kopNu} op kop.`
+        : `Rijtje ${getal(rijtje)} bracht ${metTeken(bijdrageRijtje)} bij.`
     : koploper
       ? `Sleep naar rijtje ${getal(koploper.rijtje)}: cijfer ${koploper.cijfer} op kop.`
       : `Sleep terug: cijfer ${gekozen} bleef op kop.`
