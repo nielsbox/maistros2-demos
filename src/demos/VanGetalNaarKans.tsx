@@ -511,7 +511,12 @@ export default function VanGetalNaarKans() {
                 het paneel, tegen 207,1 px en 16,8 px met de geschrapte zin
                 erbij. Op 1440x900 is die ruimte 227,5 px. */}
         <p>Jij bouwt zelf de curve die van een getal een kans maakt.</p>
-        <p>Dat getal is de kans dat de rij bij Albert hoort. Dit heet logistische regressie.</p>
+        {/* "Die kans" en niet "Dat getal". De regel erboven noemt TWEE getallen -
+            het getal dat erin gaat en de kans die eruit komt - dus "dat getal"
+            wees naar het verkeerde van de twee. En het woord `antwoord` staat op
+            de y-as van stap 1, dus een leerling die deze regel leest, ziet het
+            woord op het bord staan. */}
+        <p>Die kans hoort bij het antwoord Albert. Dit heet logistische regressie.</p>
       </Brief>
 
       {/*
@@ -616,7 +621,7 @@ export default function VanGetalNaarKans() {
             bord, en dat is precies de reden dat hij er staat. */}
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {stap === 0 && <Btn onClick={() => kiesStap(1)}>Zet de curve erbij</Btn>}
-          {stap === 1 && <Btn onClick={() => kiesStap(2)}>Nu de computer</Btn>}
+          {stap === 1 && <Btn onClick={() => kiesStap(2)}>Laat de computer zoeken</Btn>}
           {stap === 2 && (
             /* Trainen staat uit zodra er geen zichtbare stap meer te zetten is,
                en dat gebeurt echt: de top is vlak, dus een leerling die met de
@@ -654,7 +659,7 @@ export default function VanGetalNaarKans() {
             </div>
             <ul className="mt-1 space-y-0.5">
               <Bandregel band="zekerJuist" woord="zeker en juist" aantal={b.zekerJuist} />
-              <Bandregel band="twijfel" woord="twijfel" aantal={b.twijfel} />
+              <Bandregel band="twijfel" woord="niet zeker" aantal={b.twijfel} />
               <Bandregel band="zekerFout" woord="zeker en fout" aantal={b.zekerFout} />
             </ul>
           </>
@@ -674,8 +679,14 @@ export default function VanGetalNaarKans() {
         */}
         {!heeftCurve && (
           <>
+            {/* "De rijen die door elkaar lopen" en niet "De rijen uit de strook".
+                Het woord `strook` stond nergens anders op dit scherm, dus een
+                leerling moest zelf raden welk stuk bord ermee bedoeld was. Op het
+                bord zelf staat "hier lopen 6 rijen door elkaar" en de
+                vaststelling erboven heet "Rijen die door elkaar lopen": dat is
+                het woord dat deze zes rijen al hebben. */}
             <div className="mt-3 text-[11.5px] font-bold uppercase tracking-[0.09em] text-ink/75">
-              De rijen uit de strook
+              De rijen die door elkaar lopen
             </div>
             <table className="mt-1 w-full text-[12.5px] tabular-nums">
               <thead>

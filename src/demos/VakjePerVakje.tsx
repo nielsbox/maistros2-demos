@@ -1099,34 +1099,6 @@ function meet(s: Scales): Maten {
   }
 }
 
-/**
- * De breedte van een bijschrift, om te zien of twee labels op één regel
- * elkaar raken.
- *
- * Dit wordt ECHT gemeten, met dezelfde letter en hetzelfde gewicht als op het
- * bord, en niet geschat uit het aantal tekens. Een schatting van 0,58 keer de
- * lettergrootte per teken zat er 37% naast - de bijschriften van dit bord
- * meten 236,3 px voor 43 tekens, dus 5,5 px per teken - en daardoor viel het
- * opschrift bij de stippellijn altijd weg, ook waar er ruim plaats voor was.
- * Op het verschil tussen wég en er staan mag geen schatting zitten.
- *
- * Zolang het weblettertype nog niet binnen is, meet dit de terugvalletter.
- * Dat scheelt één beeld en nooit een verkeerde beslissing die blijft staan:
- * bij de volgende tekening staat het goed.
- */
-const meter = (() => {
-  let ctx: CanvasRenderingContext2D | null = null
-  return (t: string, px: number, gewicht: number) => {
-    if (ctx === null) ctx = document.createElement('canvas').getContext('2d')
-    if (!ctx) return t.length * px * 0.44
-    ctx.font = `${gewicht} ${px}px 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif`
-    return ctx.measureText(t).width
-  }
-})()
-
-function tekstbreed(t: string, px: number): number {
-  return meter(t, px, 600)
-}
 
 /** Het kader van 28 bij 28 met de rasterlijnen. De pixels komen erbovenop. */
 function Kader({ m }: { m: Maten }) {
@@ -1284,7 +1256,6 @@ function Bord({
   opCijfer: (c: number) => void
 }) {
   const m = meet(s)
-  const juist = gekozen === echt
 
   /* Alleen de pixels met inkt worden getekend. De rest is de witte
      achtergrond van MNIST, en 630 lege rechthoeken tekenen kost alleen tijd.
@@ -1332,14 +1303,6 @@ function Bord({
      weg - de kop draagt de betekenis dan al, en het driehoekje zegt nog steeds
      dat hier een waarde staat. */
   const kop = 'totaal per cijfer - links tegen, rechts voor'
-  const kopEinde = m.links + tekstbreed(kop, 13)
-  const label = 'hoogste totaal'
-  const labelBreed = tekstbreed(label, 13)
-  /** Waar de getallenkolom rechts begint. Daar mag het opschrift niet in. */
-  const getallenVan = m.links + m.breed - 58
-  const rechtsPast = hoogsteX + 7 + labelBreed < getallenVan && hoogsteX > kopEinde + 6
-  const linksPast = hoogsteX - 7 - labelBreed > kopEinde + 6
-  const labelKant = rechtsPast ? 'rechts' : linksPast ? 'links' : 'weg'
 
   /* De pixel die de leerling aanwijst, uit de coördinaten van de aanwijzer.
      Eén doorzichtig vlak over het hele beeldje, niet 784 vakjes met elk hun
@@ -1500,15 +1463,24 @@ function Bord({
             d={`M ${hoogsteX - 4} ${balkenOnder + 6} L ${hoogsteX + 4} ${balkenOnder + 6} L ${hoogsteX} ${balkenOnder} Z`}
             fill={NAVY}
           />
-          {labelKant !== 'weg' && (
-            <Bijschrift
-              x={labelKant === 'rechts' ? hoogsteX + 7 : hoogsteX - 7}
-              y={balkenBoven - 7}
-              anker={labelKant === 'rechts' ? 'start' : 'end'}
-            >
-              {label}
-            </Bijschrift>
-          )}
+          {/* HIER STOND "hoogste totaal", EN DAT WAS EEN VIJFDE BIJSCHRIFT.
+              Het budget van dit project is vier bijschriften tegelijk, en met
+              de kop, de twee bijschriften onder het beeldje en de antwoordregel
+              was dat al gehaald. Gemeten op 1024x768: zes stuks.
+
+              Van de vijf was dit het enige dat een derde keer zei wat er al
+              twee keer stond - de streep zelf staat bij het hoogste totaal, het
+              driehoekje staat op die balkregel, en de antwoordregel eronder
+              noemt dat cijfer met zoveel woorden. En het was al niet
+              draagkrachtig: `labelKant` liet het wegvallen zodra het niet
+              paste, dus het bord werkte op de smalle formaten al zonder. Nu
+              werkt het op alle formaten hetzelfde.
+
+              De streep en het driehoekje BLIJVEN. Zij dragen de reden waarom
+              dit blok bestaat: op het openingsbeeldje tekent cijfer 1 op -10,37
+              een langere balk dan de winnende 5 op +6,80, dus "de langste balk
+              wint" is niet waar en "het hoogste totaal wint" wel. Dat is
+              meetkunde en geen tekst. */}
         </>
       )}
 
@@ -1648,14 +1620,29 @@ function Bord({
         )
       })}
 
-      {/* De twee antwoordregels. Elke toestand heeft zijn eigen vorm, zijn
-          eigen getal en zijn eigen woord, dus niets hangt aan kleur alleen.
+      {/* DE ANTWOORDREGEL, en dat waren er twee.
+          Er stond "de keuze van het model: 5 - juist" met daaronder "het echte
+          cijfer: 5". Samen met de drie bijschriften erboven kwam dit bord
+          daarmee op VIJF losse bijschriften, en het budget is vier. Deze twee
+          horen bij elkaar - ze zeggen wat eruit kwam en wat het had moeten
+          zijn - dus ze zijn nu één zin.
+
+          "juist" en "fout" zijn er tegelijk uit gegaan, en dat is winst: de
+          leerling vergelijkt nu twee getallen die er staan in plaats van een
+          woord te lezen dat hem een cijfer geeft. Het echte cijfer blijft op
+          zijn balkregel geringd, en die balkregel draagt zijn cijfer al in
+          15,5 px, dus de ring is te vinden zodra de zin het cijfer noemt.
 
           Tijdens de optelling staat hier GEEN winnaar. Dat is de belangrijkste
           regel van dit bord: halverwege leidt bij 118 van de 120 beeldjes een
           ander cijfer dan het uiteindelijke antwoord - de kop wisselt mediaan
           8 keer - dus een bord dat tussentijds "het model zegt 7" laat staan,
-          leert het tegendeel van wat het bedoelt. */}
+          leert het tegendeel van wat het bedoelt.
+
+          De hoogte van de stapel houdt nog ruimte voor TWEE regels (zie
+          `hoogte` hierboven). Dat blijft met opzet zo: de zes gemeten sommen in
+          de kop van dit bestand gelden voor die stapelhoogte, en ruimte over
+          onder de laatste regel kost niets. */}
       {klaar ? (
         <path
           d={`M ${m.links + 4} ${antwoordBoven - 5} L ${m.links + 13} ${antwoordBoven + 1} L ${m.links + 4} ${antwoordBoven + 7} Z`}
@@ -1673,33 +1660,12 @@ function Bord({
         paintOrder="stroke"
       >
         {klaar
-          ? `de keuze van het model: ${gekozen} - ${juist ? 'juist' : 'fout'}`
-          : `nog ${getal(tegaan)} ${meervoud(tegaan, 'rijtje', 'rijtjes')} te gaan`}
+          ? `de keuze van het model: ${gekozen} - het echte cijfer is ${echt}`
+          : `nog ${getal(tegaan)} ${meervoud(tegaan, 'rijtje', 'rijtjes')} te gaan - het echte cijfer is ${echt}`}
       </text>
-      <circle
-        cx={m.links + 8.5}
-        cy={antwoordBoven + m.maat * 1.5 + 1}
-        r={4.5}
-        fill="#fff"
-        stroke={INK}
-        strokeWidth={2}
-      />
-      <text
-        x={m.links + 20}
-        y={antwoordBoven + m.maat * 1.5 + 6}
-        fontSize={m.maat}
-        fontWeight={700}
-        fill={INK}
-        stroke="#fff"
-        strokeWidth={3.5}
-        paintOrder="stroke"
-      >
-        {`het echte cijfer: ${echt}`}
-      </text>
-      {/* Er staat GEEN totaal van het gekozen cijfer bij de antwoordregels.
-          Dat getal staat al rechts op zijn eigen balkregel, en een tweede
-          exemplaar naast het antwoord liep op 900x700 over de regel
-          "de keuze van het model: 5 - juist" heen. */}
+      {/* Er staat GEEN totaal van het gekozen cijfer bij deze regel. Dat getal
+          staat al rechts op zijn eigen balkregel, en een tweede exemplaar
+          naast het antwoord liep op 900x700 over de regel heen. */}
     </>
   )
 }

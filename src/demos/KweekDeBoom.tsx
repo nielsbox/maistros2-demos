@@ -13,13 +13,11 @@ import {
   MAX_DIEPTE,
   VOORBEELDEN,
   WOORDEN,
-  aantalBladeren,
   aantalCondities,
   aantalKlaar,
+  alleVakjes,
   besteConditie,
   cartBoom,
-  conditieTekst,
-  diepteVan,
   drempels,
   exportText,
   gelijkspelVakjes,
@@ -399,6 +397,41 @@ function conditieRegels(c: Conditie): [string, string] {
   const woorden = WOORDEN[c.kenmerk]
   if (woorden) return [KENMERKEN[c.kenmerk], `is ${woorden[0]}`]
   return [KENMERKEN[c.kenmerk], `< ${getal(c.drempel, 1)} cm`]
+}
+
+/**
+ * Dezelfde conditie op één regel, voor in een zin: "Materiaal is plush" of
+ * "Lengte < 53,0 cm".
+ *
+ * WAAROM DIT ER IS. In het scherm van de computer stond "In het gekozen vakje
+ * zou de computer Lengte <= 53.04 kiezen." - sklearn-notatie mét punt, midden
+ * in een Nederlandse zin, terwijl het vakje er tien centimeter naast
+ * "Lengte / < 53,0 cm" zei. Eén conditie, twee schrijfwijzen, één scherm.
+ *
+ * De Python-vorm blijft wel bestaan, in `conditieTekst` en dus in de twee
+ * `export_text`-blokken onderaan dat scherm: die zijn met opzet een
+ * teken-voor-teken kopie van wat het notebook afdrukt. De grens loopt dus
+ * tussen PROZA (Nederlands, komma) en CODEBLOK (Python, punt).
+ */
+const conditieWoorden = (c: Conditie): string => conditieRegels(c).join(' ')
+
+/**
+ * Waarom een kenmerkknop uit staat, in de woorden van dit vakje.
+ *
+ * Een kenmerk waarop elk voorbeeld in het vakje dezelfde waarde heeft, heeft
+ * geen drempel meer - dat is geen storing maar iets om te tonen. Er stond
+ * daarover één vaste regel onderaan het paneel ("Een kenmerk staat uit als elk
+ * voorbeeld in het vakje daar dezelfde waarde heeft"), ver van de grijze knop
+ * en zonder te zeggen wélke knop. Nu staat er bij de knoppen wat er in dit
+ * vakje aan de hand is, met het woord van de data zelf erin.
+ */
+function gelijkeWaarde(ids: readonly number[], k: KenmerkNr): string | null {
+  if (ids.length === 0) return null
+  const eerste = waarde(ids[0], k)
+  if (ids.some((id) => waarde(id, k) !== eerste)) return null
+  const woorden = WOORDEN[k]
+  if (woorden) return `zijn ${woorden[eerste === 0 ? 0 : 1]}`
+  return 'zijn even lang'
 }
 
 type KlasseTelling = { klasse: Klasse; aantal: number; naam: string[] }
@@ -899,19 +932,22 @@ export default function KweekDeBoom() {
 
   const condities = aantalCondities(boom)
   const klaar = aantalKlaar(boom)
-  const bladeren = aantalBladeren(boom)
-  const diepte = diepteVan(boom)
 
   const computerKeuze = useMemo(() => besteConditie(gekozen.ids), [gekozen.ids])
 
-  /* De boom van de computer en zijn vier getallen. Eén keer gerekend: hij
-     verandert nooit, want de data verandert nooit. */
+  /* De boom van de computer. Eén keer gerekend: hij verandert nooit, want de
+     data verandert nooit.
+
+     ER STAAN NOG TWEE GETALLEN VAN HEM OP HET SCHERM, en dat waren er vier.
+     `bladeren` en `diepte` zijn eruit omdat ze niets veranderen aan wat de
+     leerling doet: het aantal bladeren is op het bord te tellen en de diepte
+     is de rij waarop een vakje staat. Wat de vergelijking wél draagt, is dat
+     de computer hier één conditie meer nodig heeft en op dezelfde finish
+     uitkomt. */
   const cart = useMemo(() => cartBoom(ALLE_IDS), [])
   const cartGetallen = useMemo(
     () => ({
       condities: aantalCondities(cart),
-      bladeren: aantalBladeren(cart),
-      diepte: diepteVan(cart),
       klaar: aantalKlaar(cart),
       gelijkspel: gelijkspelVakjes(cart),
     }),
@@ -1021,19 +1057,48 @@ export default function KweekDeBoom() {
    *  vakje één klasse heeft, dus dan mag de regel niet vragen om verder te
    *  bouwen - er valt niets meer te bouwen. Het woord blijft `klaar`, hetzelfde
    *  woord als de teller erboven. */
+  /* Ligt er VERDEROP nog werk? Zonder deze zin loopt de leerling dood. Op een
+     vakje dat al zuiver is of dat op de onderste rij staat, gaan alle vier de
+     kenmerkknoppen grijs, en de regel zei alleen WAAROM dit vakje niet verder
+     kan - niet dat er elders nog een blad open ligt. Gemeten in die stand: 2
+     van de 3 condities gezet, alle vier de knoppen uit, en toch nog TWEE
+     gemengde bladen te splitsen. Elke knop op het scherm was grijs en niets
+     zei wat je dan wel moest doen, en er staat geen leerkracht naast. */
+  const verderop = alleVakjes(boom).some(
+    ({ pad: p, vakje: v }) =>
+      isBlad(v) && !zuiver(v.ids) && p.length < MAX_DIEPTE && p.join(',') !== pad.join(','),
+  )
+    ? ' Klik op een ander blad om verder te bouwen.'
+    : ''
+
   const stand = klaar === VOORBEELDEN.length
-    ? 'Elk vakje heeft één klasse. De boom is klaar.'
+    ? 'Elk vakje bevat nog maar één klasse. De boom is klaar.'
     : opLengte
     ? 'Sleep het handvat, of klik op een blad om verder te bouwen.'
     : !isBlad(gekozen)
       ? 'Dit vakje is al gesplitst. Klik op een blad om verder te bouwen.'
       : isZuiver
-        ? 'Dit vakje heeft één klasse. Hier stopt de boom.'
+        ? `Dit vakje bevat maar één klasse. Hier stopt de boom.${verderop}`
         : teDiep
-          ? 'Dit vakje staat op de onderste rij. Dieper gaat de boom niet.'
+          ? `Dit vakje staat op de onderste rij. Dieper gaat de boom niet.${verderop}`
           : budgetOver === 0
             ? 'Je condities zijn op. Haal er een weg om verder te bouwen.'
             : 'Kies een kenmerk voor dit vakje.'
+
+  /** Welke kenmerkknoppen grijs staan omdat het kenmerk hier op is, en waarom.
+   *  Alleen als er überhaupt gesplitst mag worden: staan alle vier de knoppen
+   *  uit, dan zegt `stand` hierboven al waarom. */
+  const uitRegel = (() => {
+    if (!magSplitsen) return null
+    const uit = ([0, 1, 2, 3] as KenmerkNr[]).filter((k) => !mogelijk[k])
+    if (uit.length === 0) return null
+    if (uit.length === 1) {
+      const zelfde = gelijkeWaarde(gekozen.ids, uit[0])
+      if (zelfde) return `Alle voorbeelden hier ${zelfde}, dus ${KENMERKEN[uit[0]]} staat uit.`
+    }
+    const namen = uit.map((k) => KENMERKEN[k])
+    return `${namen.slice(0, -1).join(', ')} en ${namen[namen.length - 1]} staan uit: daarop lijken alle voorbeelden hier op elkaar.`
+  })()
 
   return (
     <div className="relative h-full w-full">
@@ -1090,25 +1155,32 @@ export default function KweekDeBoom() {
             {/* DE TELLER DIE BEWEEGT. Waarom niet de fout: zie `aantalKlaar` in
                 src/lib/boom.ts - drie van de vier eerste condities laten de fout
                 op 8 staan, en een leerling alleen leest dat als een misser. */}
+            {/* HET OPSCHRIFT IS EEN ZELFSTANDIG NAAMWOORD, en dat was het niet.
+                Er stond "Klaar" boven een grote 0, en dat leest een tel lang
+                als een oordeel over de leerling in plaats van als een telling.
+                De andere twee borden noemen hier wat er geteld wordt ("Rijen
+                die door elkaar lopen", "Juist bij deze stand"), dus dit is ook
+                één patroon over de drie borden heen. */}
             <Vaststelling
-              label="Klaar"
+              label="Voorbeelden die klaar zijn"
               value={klaar}
               outOf={{ total: VOORBEELDEN.length, noun: 'voorbeelden' }}
-              detail="Een voorbeeld is klaar als zijn vakje één klasse heeft."
+              detail="Een voorbeeld is klaar zodra het vakje eromheen maar één klasse bevat."
               color={NAVY}
             />
           </div>
 
-          {/* `whitespace-nowrap` per stukje, en niet één regel: op 16 rem brak
-              "condities 1 van 3" achter het woord "van" af, zodat er een losse
-              3 op de volgende regel stond. Nu wijkt het hele stukje uit. */}
-          <div className="mt-1 flex flex-wrap gap-x-3 text-[13px] tabular-nums text-ink/80">
-            <span className="whitespace-nowrap">
-              condities {getal(condities)} van {getal(BUDGET)}
-            </span>
-            <span className="whitespace-nowrap">bladeren {getal(bladeren)}</span>
-            <span className="whitespace-nowrap">diepte {getal(diepte)}</span>
-          </div>
+          {/* ÉÉN GETAL, EN HET IS EEN ZIN. Hier stonden drie telegramstukjes
+              naast elkaar: "condities 1 van 3", "bladeren 2", "diepte 1". Geen
+              werkwoord, geen lidwoord, en "bladeren" is in het Nederlands ook
+              een werkwoord, dus "bladeren 2" is bij de eerste blik dubbelzinnig.
+              Twee van de drie getallen veranderden bovendien niets aan wat de
+              leerling hierna doet - het aantal bladeren staat op het bord te
+              tellen en de diepte is de rij waarop een vakje staat. Het budget
+              blijft, want dat loopt op en zet uiteindelijk alle knoppen uit. */}
+          <p className="mt-1 text-[13px] leading-snug text-ink/80">
+            Je hebt {getal(condities)} van de {getal(BUDGET)} condities gezet.
+          </p>
 
           <Divider />
         </div>
@@ -1133,6 +1205,18 @@ export default function KweekDeBoom() {
 
             <div className="mt-2 text-[13.5px] leading-snug text-ink">{stand}</div>
 
+            {/* WAAROM EEN KNOP GRIJS STAAT, bij de knoppen zelf en met het woord
+                van deze data erin. Dit stond als vaste algemene regel onderaan
+                het paneel, onder de knop "De computer": ver van de grijze knop,
+                zonder te zeggen wélke, en in de eerste toestand van het bord
+                staat Materiaal al uit. Een dode knop zonder reden leest als een
+                bord dat stuk is, en er staat bij les 5 geen leerkracht naast.
+                Het blok onderaan is daarmee weg, dus het paneel is per saldo
+                korter geworden. */}
+            {uitRegel && (
+              <p className="mt-1.5 text-[12.5px] leading-snug text-muted">{uitRegel}</p>
+            )}
+
             <div className="mt-2 flex flex-wrap gap-1.5">
               <Btn variant="ghost" disabled={terug.length === 0} onClick={stapTerug}>
                 Laatste conditie weg
@@ -1145,21 +1229,6 @@ export default function KweekDeBoom() {
               De computer
             </Btn>
 
-            {/* Waarom een kenmerkknop soms uit staat. Als vaste regel en niet als
-                melding bij de knoppen: een zin die komt en gaat, verschuift alles
-                eronder.
-
-                DIT IS HET LAATSTE BLOK IN DIT PANEEL, en dat is gemeten. Hier
-                stond ook een Note van drie alinea's over hoe de computer zoekt.
-                Daarmee toonde het scrollvak op 1024x768 390 van 454 px: 64 px
-                stond onder de rand, waaronder deze regel. Die Note is verhuisd
-                naar het scherm van de computer, waar de rest over die boom ook
-                staat - proza over de computer hoort daar, niet naast de knoppen
-                waarmee de leerling zijn eigen boom bouwt. Nu is de inhoud 209 px
-                en scrollt er niets, ook niet op 900x700. */}
-            <p className="mt-2 text-[12.5px] leading-snug text-muted">
-              Een kenmerk staat uit als elk voorbeeld in het vakje daar dezelfde waarde heeft.
-            </p>
           </div>
         )}
 
@@ -1178,49 +1247,55 @@ export default function KweekDeBoom() {
             </div>
 
             <div className="mt-2 min-h-0 space-y-2 overflow-y-auto">
-              {/* GEMETEN OP 900x700, waar dit paneel 16 rem breed is en er 224 px
-                  binnen de rand overblijft. Met kapitalen en `tracking` liepen
-                  de vier kopjes samen tot "COND.BLAD.DIEP.KLAA" en viel de
-                  laatste letter buiten het paneel. Kleine letters zonder
-                  tracking halen dezelfde vier kopjes in 110 px, en dan past
-                  "de computer" er ongebroken naast. */}
+              {/* TWEE KOLOMMEN, EN ZE STAAN VOLUIT. Er stonden er vier, met
+                  afgekorte kopjes: "cond. blad. diep. klaar". Die afkortingen
+                  werden nergens meer uitgeschreven zodra de stukjes "bladeren 2"
+                  en "diepte 1" uit het paneel gingen, en een kopje dat je moet
+                  raden is hetzelfde gebrek als een conditie die je moet
+                  decoderen. Wat de vergelijking draagt, staat hier nog: de
+                  computer heeft één conditie meer nodig en komt op dezelfde
+                  finish uit. Met twee kolommen passen de kopjes voluit binnen de
+                  224 px die dit paneel op 900x700 vrij heeft. */}
               <table className="w-full border-collapse text-[13px] tabular-nums">
                 <thead>
-                  <tr className="text-right text-[11.5px] font-semibold text-ink/70">
+                  <tr className="text-right align-bottom text-[11.5px] font-semibold text-ink/70">
                     <th />
-                    <th className="pl-2">cond.</th>
-                    <th className="pl-2">blad.</th>
-                    <th className="pl-2">diep.</th>
-                    <th className="pl-2">klaar</th>
+                    <th className="pl-2">condities</th>
+                    <th className="pl-2">voorbeelden klaar</th>
                   </tr>
                 </thead>
                 <tbody className="text-right text-ink">
                   <tr>
                     <td className="whitespace-nowrap text-left">jouw boom</td>
                     <td className="pl-2">{getal(condities)}</td>
-                    <td className="pl-2">{getal(bladeren)}</td>
-                    <td className="pl-2">{getal(diepte)}</td>
                     <td className="pl-2">{getal(klaar)}</td>
                   </tr>
                   <tr>
                     <td className="whitespace-nowrap text-left">de computer</td>
                     <td className="pl-2">{getal(cartGetallen.condities)}</td>
-                    <td className="pl-2">{getal(cartGetallen.bladeren)}</td>
-                    <td className="pl-2">{getal(cartGetallen.diepte)}</td>
                     <td className="pl-2">{getal(cartGetallen.klaar)}</td>
                   </tr>
                 </tbody>
               </table>
 
               {computerKeuze && (
+                /* DE CONDITIE IN WOORDEN, niet in sklearn-notatie. Hier stond
+                   "zou de computer Lengte <= 53.04 kiezen" - met een punt als
+                   decimaalteken, in een Nederlandse zin, terwijl het vakje op
+                   het bord ernaast "Lengte / < 53,0 cm" zegt. De Python-vorm
+                   hoort in de twee codeblokken onderaan dit scherm en nergens
+                   anders.
+
+                   En `de computer` en niet `sklearn`: dit bord noemt die actor
+                   overal de computer, tot op de knop waarmee je hier komt. */
                 <p className="text-[13px] leading-snug text-ink/80">
-                  In het gekozen vakje zou de computer {conditieTekst(computerKeuze.conditie)}{' '}
-                  kiezen.
+                  In het gekozen vakje zou de computer deze conditie kiezen:{' '}
+                  {conditieWoorden(computerKeuze.conditie)}.
                   {computerKeuze.evenGoed > 1 && (
                     <>
                       {' '}
-                      Hier zijn {getal(computerKeuze.evenGoed)} condities even goed. Dan kiest
-                      sklearn er willekeurig één.
+                      Hier zijn {getal(computerKeuze.evenGoed)} condities even goed. Dan kiest de
+                      computer er willekeurig één.
                     </>
                   )}
                 </p>
@@ -1232,7 +1307,7 @@ export default function KweekDeBoom() {
               <Note>
                 <p>De computer probeert alle condities op alle kenmerken.</p>
                 <p className="mt-1.5">
-                  Hij kiest de conditie die de twee vakjes het meest uit één klasse maakt.
+                  Hij kiest de conditie waarbij de twee nieuwe vakjes het minst gemengd zijn.
                 </p>
                 <p className="mt-1.5">
                   Hier heeft hij er {getal(cartGetallen.condities)} nodig. Jij mag er{' '}
@@ -1240,12 +1315,15 @@ export default function KweekDeBoom() {
                 </p>
               </Note>
 
-              {/* Eén zin die de brug benoemt. Zonder haar staan er twee
-                  schrijfwijzen van dezelfde conditie op één scherm - "< 53,0 cm"
-                  op het bord en `Lengte <= 53.04` hieronder - en moet een
-                  leerling zelf raden dat het hetzelfde is. */}
+              {/* Eén zin die de brug benoemt, en ze doet twee dingen: ze zegt
+                  dat de blokken onderaan dezelfde condities zijn in een andere
+                  schrijfwijze - "< 53,0 cm" op het bord tegen `Lengte <= 53.04`
+                  hieronder - en ze kondigt de codering aan die er pal onder
+                  staat. Ze zei eerst "Hieronder staat dezelfde boom", maar er
+                  staan twee bomen onder, en het eerste dat eronder staat is de
+                  codering en geen boom. */}
               <p className="text-[13px] leading-snug text-ink/80">
-                Hieronder staat dezelfde boom zoals Python hem afdrukt.
+                Python schrijft dezelfde condities met getallen. Zo lees je die getallen:
               </p>
 
               {/* DE CODERING STAAT PAL BOVEN DE TWEE CODEBLOKKEN, want ze is de
