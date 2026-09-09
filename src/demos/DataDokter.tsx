@@ -836,8 +836,18 @@ function Randmerk({
   const dy = groep.dy / lengte
   const n = groep.rijen.length
   const tekst = `${n} ${rijWoord(n)} buiten beeld`
-  // 13,5 px vetgedrukt is gemeten 5,9 px per teken; 6,4 houdt marge.
+  // 13,6 px vetgedrukt is gemeten 5,9 px per teken; 6,4 houdt marge.
   const naarLinks = x + 16 + tekst.length * 6.4 > scales.safe.right
+  /* En NAAR BOVEN als het randmerk laag staat. Er zat alleen een zijwaartse
+     uitwijk, en daardoor liep dit label door de naam van de x-as: gemeten
+     30,1 x 3,3 px echte inkt tussen "2 rijen buiten beeld" en "schoenmaat" op
+     1280x800 en 1280x720, en 1,6 x 3,3 px op 1366x768. Het is breedte-gedreven,
+     dus op 900x700 en 1024x768 was er niets te zien en werd het bord daar
+     "schoon" gemeld. De asnaam heeft zijn basislijn op safe.bottom - 30; blijf
+     daar 16 px boven, en zet het label anders bóven het merk. */
+  const asNaamBasis = scales.safe.bottom - 30
+  const teLaag = y + 5 > asNaamBasis - 16
+  const labelY = teLaag ? y - 12 : y + 5
   const punt = `${x + dx * 11},${y + dy * 11} ${x - dx * 5 - dy * 7},${y - dy * 5 + dx * 7} ${x - dx * 5 + dy * 7},${y - dy * 5 - dx * 7}`
   return (
     <g
@@ -856,7 +866,7 @@ function Randmerk({
       <polygon points={punt} fill={DATA} stroke="#fff" strokeWidth={1.5} />
       <text
         x={naarLinks ? x - 16 : x + 16}
-        y={y + 5}
+        y={labelY}
         textAnchor={naarLinks ? 'end' : 'start'}
         fontSize={13.5}
         fontWeight={700}
