@@ -253,7 +253,12 @@ export default function WaarLegJijDeGrens() {
         de portaalkaart nooit: staat het doel niet op het bord, dan staat het
         nergens.
       */}
-      <Brief eyebrow="mAIstros 2 - les 3" title="Waar leg jij de grens?">
+      {/* De les heeft TWEE borden, en er staat geen leerkracht bij om te zeggen
+          welk wanneer. Het enige onderscheid dat een leerling meteen leest, is de
+          oefening waar het bord bij hoort - en dat zijn de woorden van de les zelf
+          ("Oefening 1", "Oefening 2"). Dit bord is de sonardata van oefening 2,
+          "Van getal naar kans" de kleuren van oefening 1. */}
+      <Brief eyebrow="mAIstros 2 - les 3, oefening 2" title="Waar leg jij de grens?">
         {/* Het doel zegt "een getal", want zo staat het in de les, en knoopt
             dat in dezelfde zin vast aan "kans", het woord dat het bord verder
             overal gebruikt. Dat stond eerst in een alinea apart, en die alinea
@@ -261,8 +266,20 @@ export default function WaarLegJijDeGrens() {
             hoog en schoof het onderste paneel eroverheen - 10 px op 1366x768 en
             58 px op 1280x720. Nu is deze Brief net zo hoog als die van de
             andere borden. */}
-        <p>Het model geeft per rij een getal tussen 0 en 1: de kans op een mijn.</p>
-        <p>Sleep de grens. Kijk hoeveel mijnen het model dan mist.</p>
+        {/* DE OPDRACHT STAAT IN DEZE EERSTE ALINEA EN NIET IN EEN TWEEDE.
+            Brief toont alleen zijn eerste kind altijd; al de rest is detail en
+            staat dichtgeklapt tot 80rem (1280px). "Sleep de grens" stond daar,
+            dus op 1024x768 en 900x700 - de formaten waarop een leerling die
+            deze les alleen doorloopt zit - stond de enige instructie van dit
+            bord niet in de DOM, achter een plusknop die hij moest vinden. Een
+            opdracht mag nooit achter een uitklapper. Het is met opzet één
+            alinea van twee zinnen en geen tweede alinea: een tweede alinea kost
+            44px die dit bord niet heeft, en dat schoof het onderste paneel
+            eerder al over de Brief (10px op 1366x768, 58px op 1280x720). */}
+        <p>
+          Het model geeft per rij een getal tussen 0 en 1: de kans op een mijn.
+          Sleep de grens en kijk wat het model dan mist.
+        </p>
         {/* De moraal van dit bord, en daarom staat ze in de Brief en niet in
             het paneel. Ze verandert nooit mee met de grens, dus het is kader
             en geen toestand - en in het paneel kostte ze 90 px die daar niet
@@ -288,7 +305,7 @@ export default function WaarLegJijDeGrens() {
         en op 900x700 scrollt de onderkant van dit paneel wel (34 en 53 px);
         dat is de uitleg en de notebookregel, nooit een knop.
       */}
-      <Panel className="pointer-events-auto absolute bottom-4 left-4 z-10 max-h-[calc(100%-12rem)] w-[16rem] overflow-y-auto px-4 py-3 xl:max-h-[calc(100%-17rem)] xl:w-[21rem]">
+      <Panel className="pointer-events-auto absolute bottom-4 left-4 z-10 max-h-[calc(100%-13.75rem)] w-[16rem] overflow-y-auto px-4 py-3 xl:max-h-[calc(100%-17rem)] xl:w-[21rem]">
         {/* Het getal dat de leerling verschuift, en het enige dat groot staat.
             Alles hieronder wordt geteld uit de grens, niets is ingetypt. */}
         <Vaststelling

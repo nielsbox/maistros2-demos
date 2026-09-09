@@ -132,6 +132,34 @@ export const KENMERKEN = ['Kleur', 'Materiaal', 'Lengte', 'Soort'] as const
 
 export type KenmerkNr = 0 | 1 | 2 | 3
 
+/**
+ * Wat de getallen van een kenmerk betekenen, in de volgorde van `KENMERKEN`.
+ *
+ * Dit staat hier omdat een conditie zonder deze regel onleesbaar is. Slide
+ * 2224341 stelt die vraag zelf, over de uitvoer van `export_text`: "Snap je
+ * wat hier staat?" Een leerling die `Kleur <= 0.50` leest, kan die vraag pas
+ * met ja beantwoorden als hij weet dat 0 blauw is. De les zegt het op 2132210
+ * en daar komen deze woorden vandaan; het bord herhaalt ze waar de conditie
+ * staat, want dertien slides verder is niemand het nog aan het opzoeken.
+ *
+ * HIER WORDT OOK DE WOORDBOTSING BESLECHT. `Soort` is in deze data een
+ * KENMERK (haai of robot), terwijl deck 4598 in zijn eerste voorbeeld "Soort
+ * 1", "Soort 2" en "Soort 3" als KLASSEN gebruikt. Eén woord voor twee
+ * begrippen is precies wat de woordenlijst tegenhoudt. Het bord noemt de
+ * uitkomst daarom altijd `klasse` (het woord van de les zelf op 2224342), en
+ * laat `Soort` nooit los staan: waar het kenmerk opduikt, staat "0 haai, 1
+ * robot" ernaast. Dan kan het niet gelezen worden als de uitkomst.
+ *
+ * Elke tekst is kort genoeg om achter een conditie te passen: de bordkolom is
+ * 520 px en `Kleur <= 0.50 · 0 blauw, 1 oranje` is 33 tekens.
+ */
+export const CODERING: readonly string[] = [
+  '0 blauw, 1 oranje',
+  '0 plush, 1 metaal',
+  '25 tot 140 cm',
+  '0 haai, 1 robot',
+]
+
 /** Het enige kenmerk met meer dan één mogelijke drempel, dus het enige waar
  *  een leerling iets te slepen heeft. */
 export const LENGTE: KenmerkNr = 2

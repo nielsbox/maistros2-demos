@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Canvas, { type Scales, type View } from '../components/Canvas'
-import { Brief, Btn, Divider, Note, Panel, PyChip } from '../components/Overlay'
+import { Brief, Btn, Note, Panel, PyChip } from '../components/Overlay'
 import Vaststelling, { getal, meervoud } from '../components/Vaststelling'
 import { clamp } from '../lib/regression'
 import {
@@ -11,6 +11,7 @@ import {
   keuze,
   keuzes,
   laadPixelModel,
+  laatsteAndereKoploper,
   tel,
   totalenPerRijtje,
   verschuif,
@@ -35,6 +36,49 @@ import { DATA, FOUT, INK, MODEL, MUTED, NAVY, RULE } from '../lib/palette'
  * aan de buitenkant aan mocht duwen. De gemeten brosheid is nu de
  * AFLOOP van de uitleg en niet meer het hele bord - de teller en de vier
  * richtingen staan er nog, en de getallen eronder zijn niet veranderd.
+ *
+ * WAAROM HET DAARNA NOG EEN KEER GEWIJZIGD IS: HET BEGON AL AFGELOPEN.
+ * De vraag die erop kwam was "wat is het nut van deze slider, ik mis wat
+ * context of verhaal". Die vraag had een precieze oorzaak: `rijtje` begon op
+ * `ZIJDE`, dus het bord opende met alle 28 rijtjes al opgeteld. De optelling
+ * rijtje na rijtje is het hele mechanisme waar dit bord voor bestaat, en die
+ * was gebeurd voordat de leerling keek. Het handvat leek daardoor dood, en
+ * alleen "Tel opnieuw op" liet nog zien waar het ooit voor was.
+ *
+ * Drie dingen zijn daarop veranderd, en alle drie staan hieronder in het
+ * bestand uitgemeten:
+ *
+ *   1. HET BORD TELT ZELF ÉÉN KEER OP bij aankomst, van 0 tot 28 in 2,5 s.
+ *      Zie het blok bij `startNarratie` voor waarom niet op 0 en niet
+ *      halfweg openen: op rijtje 0 staan tien balken van nul lengte en op
+ *      rijtje 14 staat bij 94 van de 120 beeldjes een ander cijfer bovenaan
+ *      dan het antwoord.
+ *   2. HET HANDVAT HEEFT EEN REGEL DIE ZEGT WAAR JE NAARTOE SLEEPT, met de
+ *      getallen van dit beeldje in deze stand: "Sleep naar rijtje 21: cijfer
+ *      7 op kop." Zie `handvatRegel` en `laatsteAndereKoploper()`.
+ *   3. HET PANEEL LEEST NU VAN MECHANISME NAAR AFLOOP. De teller over 120
+ *      beeldjes stond bovenaan, boven de optelling die dit bord uitlegt, dus
+ *      wie van boven naar onder las, kreeg eerst de conclusie. Ze staat nu
+ *      onder de knoppen die haar laten bewegen, en haar regel zei
+ *      "Ander antwoord: 0." zonder te zeggen ander dan wat - zie
+ *      `tellerRegel`.
+ *
+ * DAT DE LES DIT NERGENS UITLEGT, IS GEMETEN OP DE LES ZELF. Over alle 94
+ * slides van lc 4510 komen de woorden gewicht, weegt, "telt op", optellen en
+ * "per pixel" 0 keer voor. Stap 5 (2128387) roept `LogisticRegression()` aan
+ * en 2128390 laat de ConvergenceWarning zien; hoe het model aan zijn antwoord
+ * komt, staat er niet. Dit bord kan dus op geen enkele slide leunen en moet
+ * zijn eigen context volledig zelf dragen. Vandaar de narratie bij aankomst:
+ * er staat geen leerkracht bij les 3, 4 en 5.
+ *
+ * "RIJTJE" EN NIET "RIJ", en dat is de les na, niet ervoor. De woordenlijst
+ * van dit project geeft `rij` aan één regel van het databestand, en in les 4
+ * IS dat een heel beeldje: 2128308 zegt letterlijk "Een beeldje staat bij ons
+ * als één lange rij van 784 getallen" en gebruikt in de volgende zin "28 rijen
+ * van 28" voor een strook van het beeldje - twee betekenissen op één slide. De
+ * les zelf zegt op 2128303 en op 2128387 "28 rijtjes van 28", en 2128387 is
+ * een slide die alle drie de weergaven heeft. `rijtje` is dus het woord van de
+ * les voor precies wat dit bord optelt, en het botst niet met `rij`.
  *
  * ALLE GETALLEN OP DIT BORD WORDEN LIVE GEREKEND, met de gewichten van het
  * model uit de les. Er staat nergens een getal in de tekst, ook niet het
@@ -295,31 +339,20 @@ function Groep({ label, children }: { label: string; children: string }) {
 export default function VakjePerVakje() {
   const [model, setModel] = useState<PixelModel | null>(null)
   const [laadfout, setLaadfout] = useState<string | null>(null)
-  useEffect(() => {
-    let levend = true
-    laadPixelModel()
-      .then((m) => {
-        if (levend) setModel(m)
-      })
-      .catch((e: unknown) => {
-        /* De technische reden gaat naar de console en niet naar het bord. Een
-           leerling kan niets met "Unexpected token '<'" - dat is wat een
-           ontbrekend bestand hier oplevert, want de host stuurt dan index.html
-           terug in plaats van een 404. Op het bord staat wat hij wel kan doen. */
-        console.error('les4: het pixelmodel laadt niet', e)
-        if (levend) setLaadfout('Herlaad de pagina.')
-      })
-    return () => {
-      levend = false
-    }
-  }, [])
 
   /** Welk beeldje groot op het bord staat. 0 is de 5 die naar een 3 kantelt. */
   const [nr, setNr] = useState(0)
   const [dy, setDy] = useState(0)
   const [dx, setDx] = useState(0)
-  /** Hoeveel rijtjes van het beeldje al opgeteld zijn, 0 tot 28. */
-  const [rijtje, setRijtje] = useState(ZIJDE)
+  /**
+   * Hoeveel rijtjes van het beeldje al opgeteld zijn, 0 tot 28.
+   *
+   * DIT BEGINT OP 0, EN HET BORD TELT ZELF ÉÉN KEER OP. Zie het blok over de
+   * openingstoestand boven `startNarratie`: die drie regels samen zijn de
+   * reden dat een leerling die hier koud aankomt, binnen drie tellen de hele
+   * optelling gezien heeft zonder te klikken.
+   */
+  const [rijtje, setRijtje] = useState(0)
   /** Van welk cijfer de getallen op het beeldje liggen. `null` betekent: het
    *  echte cijfer van dit beeldje. Zo is er niets stil te houden als de
    *  leerling een ander beeldje neemt - dan hoort er ook een ander cijfer bij. */
@@ -351,6 +384,98 @@ export default function VakjePerVakje() {
       })
     }, STAP_MS)
   }, [stopTellen])
+
+  /* ---------------------------------------------------------------- *
+   * DE OPENINGSTOESTAND, en waarom het bord zelf begint te tellen.
+   *
+   * Dit bord stond op `useState(ZIJDE)`: het opende volledig opgeteld. De
+   * optelling rijtje na rijtje is het hele mechanisme waar het bord voor
+   * bestaat, en die was al gebeurd voordat de leerling keek. Het handvat leek
+   * daardoor niets te doen, en alleen "Tel opnieuw op" liet zien waar het ooit
+   * voor was.
+   *
+   * De drie mogelijkheden, en waarom deze het is. Alle drie zijn NAGEREKEND op
+   * public/les4-pixelmodel.json, niet afgewogen op gevoel:
+   *
+   * 1. OPGETELD OPENEN (wat het deed). Tien volle balken, een antwoord, en het
+   *    mechanisme onzichtbaar. Dit is het gebrek.
+   *
+   * 2. OP 0 OPENEN. Op rijtje 0 zijn de tien totalen alleen de constanten, en
+   *    de grootste daarvan is in absolute waarde 0,0003 - `metTeken()` schrijft
+   *    dat als "0,00". Een leerling ziet dus tien balken van nul lengte, tien
+   *    keer 0,00, en geen antwoord. Zonder iemand om het te vragen is dat een
+   *    bord dat stuk lijkt.
+   *
+   * 3. HALFWEG OPENEN. Nog erger, en dat is de verrassing van deze meting: op
+   *    rijtje 14 staat bij 94 van de 120 beeldjes een ANDER cijfer bovenaan dan
+   *    het antwoord. Bij het openingsbeeldje is dat de 7, terwijl het model 5
+   *    kiest. Een bord dat halverwege opent, zet er dus een verkeerd cijfer
+   *    bovenaan zonder ook maar te zeggen dat het nog niet klaar is.
+   *
+   * Daarom: op 0 beginnen en de optelling ÉÉN KEER ZELF AFDRAAIEN. 28 stappen
+   * van 90 ms is 2,52 s. De leerling ziet de markeerlijn zakken, de inkt
+   * oplichten, de tien balken groeien en het antwoord aan het eind verschijnen,
+   * zonder één klik. Daarna staat het bord in de toestand die het vroeger bij
+   * aankomst al had, met dit verschil: de optelling is nu gezien en het handvat
+   * draait haar terug.
+   *
+   * DIT HERKADERT HET BORD NIET, en dat is de huisregel die hier had kunnen
+   * breken. Twee redenen: elk paneel staat er van het eerste beeld af, en
+   * `balkas()` rekent de as één keer per beeldje over alle negen standen EN
+   * alle 29 tussenstanden. De as staat dus al op zijn eindwaarde voordat de
+   * eerste tik valt.
+   *
+   * DE NARRATIE IS GEEN GEVRAAGDE BEWEGING, dus ze respecteert
+   * `prefers-reduced-motion` en springt dan naar de eindstand. De KNOP doet dat
+   * niet: wie zelf op "Tel opnieuw op" duwt, vraagt de beweging, en een knop
+   * die dan niets doet is precies de dode knop die dit project al drie keer
+   * geleverd heeft.
+   * ---------------------------------------------------------------- */
+  const startNarratie = useCallback(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true) {
+      /* Wie geen beweging wil, krijgt geen beweging, en dan is de VOLLE stand
+         de minst slechte. Ik heb hier eerst `setRijtje(0)` van gemaakt, omdat de
+         volle stand precies het gebrek is dat Niels aanwees: het optellen is dan
+         al gebeurd voor de leerling kijkt. Maar op 0 gemeten staan alle tien de
+         totalen op 0,00 - tien balken van niets en geen antwoord - en dat is
+         voor deze leerling erger, want de optelling die 0 leesbaar maakt is juist
+         de animatie die hij heeft afgezet. Wat de slider hier draagt, draagt hij
+         dus in WOORDEN: de regel bij het handvat zegt naar welk rijtje je moet
+         slepen en welk cijfer daar bovenaan komt, en "Tel opnieuw op" laat de
+         optelling alsnog stap voor stap zien zodra de leerling erom vraagt. */
+      stopTellen()
+      setRijtje(ZIJDE)
+      return
+    }
+    telOpnieuw()
+  }, [stopTellen, telOpnieuw])
+
+  /* Het model binnenhalen, en de narratie starten op het moment dat het binnen
+     is. Dit staat hier en niet bovenaan, en het is één effect en geen twee: de
+     narratie hoort bij de GEBEURTENIS "het model is er" en niet bij een effect
+     dat toestand staat te bekijken. Het model komt met een fetch van 202 kB,
+     dus bij het eerste beeld is er nog niets: tot dan staat `rijtje` op 0 en
+     tekent het bord het lege kader met "Het model wordt geladen." erin. */
+  useEffect(() => {
+    let levend = true
+    laadPixelModel()
+      .then((m) => {
+        if (!levend) return
+        setModel(m)
+        startNarratie()
+      })
+      .catch((e: unknown) => {
+        /* De technische reden gaat naar de console en niet naar het bord. Een
+           leerling kan niets met "Unexpected token '<'" - dat is wat een
+           ontbrekend bestand hier oplevert, want de host stuurt dan index.html
+           terug in plaats van een 404. Op het bord staat wat hij wel kan doen. */
+        console.error('les4: het pixelmodel laadt niet', e)
+        if (levend) setLaadfout('Herlaad de pagina.')
+      })
+    return () => {
+      levend = false
+    }
+  }, [startNarratie])
 
   /** Met de hand aan het handvat draaien zet de klok stil. Anders vechten
    *  twee dingen om hetzelfde getal en springt de balk heen en terug. */
@@ -439,6 +564,69 @@ export default function VakjePerVakje() {
   const bijdrageRijtje =
     rijtje > 0 ? perRijtje[rijtje * 10 + cijfer] - perRijtje[(rijtje - 1) * 10 + cijfer] : 0
 
+  /* Het laatste rijtje waarop een ander cijfer bovenaan stond dan het antwoord.
+     Zie laatsteAndereKoploper() in lib/mnist.ts: dat bestaat in het midden bij
+     120 van de 120 beeldjes en over alle negen standen bij 1078 van 1080. */
+  const koploper = useMemo(
+    () => (model ? laatsteAndereKoploper(perRijtje) : null),
+    [model, perRijtje],
+  )
+
+  /* ---------------------------------------------------------------- *
+   * WAT HET HANDVAT ERVOOR DIENT, in één regel onder het handvat zelf.
+   *
+   * Dit is de regel die er niet was. Het kopje zei "Opgeteld - 28 van de 28
+   * rijtjes": dat noemt de TOESTAND van het handvat en nooit zijn NUT, en met
+   * de optelling al gebeurd bij aankomst was er ook niets meer aan te zien.
+   *
+   * De reden om terug te slepen is niet "dan zie je de optelling opnieuw" maar
+   * iets scherpers, en het staat er met de getallen van DIT beeldje in DEZE
+   * stand erin: op een rijtje verderop stond een ander cijfer bovenaan dan het
+   * antwoord. Bij het openingsbeeldje is dat rijtje 21 van de 28, met cijfer 7,
+   * terwijl het model 5 kiest. Sleep de leerling daarheen en de optelling
+   * bewijst zichzelf: het antwoord staat er nog niet, ook niet op driekwart.
+   *
+   * Eén regel, en dat is een maat. Het paneel is bij 1024x768 en 900x700 222 px
+   * breed binnen zijn rand, en er was maar plaats voor één regel: het streepje
+   * dat hier ooit stond is ervoor weggehaald (21 px) en deze regel kost er
+   * ongeveer 22. Twee regels zouden de eerlijkheidszin onderaan bij 900x700
+   * onder de rand duwen. Houd elke variant dus onder ongeveer 40 tekens en meet
+   * na - er staat een controle op in de browser, geen schatting per teken.
+   *
+   * Tijdens het optellen staat hier het getal van het rijtje dat net binnenkwam
+   * en NOOIT een winnaar: halverwege leidt bij 118 van de 120 beeldjes een
+   * ander cijfer dan het uiteindelijke antwoord.
+   * ---------------------------------------------------------------- */
+  const handvatRegel = !klaar
+    ? rijtje === 0
+      ? 'Nog niets opgeteld.'
+      : `Rijtje ${getal(rijtje)} bracht ${metTeken(bijdrageRijtje)} bij.`
+    : koploper
+      ? `Sleep naar rijtje ${getal(koploper.rijtje)}: cijfer ${koploper.cijfer} op kop.`
+      : `Sleep terug: cijfer ${gekozen} bleef op kop.`
+
+  /* ---------------------------------------------------------------- *
+   * WAT DE TELLER TELT, in de regel onder de teller.
+   *
+   * Hier stond "Ander antwoord: 0." onder "111 van de 120 beeldjes", en dat is
+   * twee gebreken in vier woorden. Ander antwoord DAN WAT stond er nergens. En
+   * in de openingstoestand is er niets verschoven, dus was het getal 0: een
+   * teller die bij aankomst op nul staat en niet zegt waarvan, leest als een
+   * teller die niet werkt.
+   *
+   * Nu heeft de regel twee toestanden en in geen van beide staat een nul. Is er
+   * niets verschoven, dan staat er wat je moet doen om de teller te laten
+   * bewegen. Is er wel verschoven, dan staat er waar het getal een verschil met
+   * IS, met zoveel woorden. Gemeten op het bestand: over de acht verschuivingen
+   * is de kleinste waarde 14 en de grootste 36, dus de tweede toestand kan
+   * nooit nul zijn.
+   * ---------------------------------------------------------------- */
+  const tellerRegel = !teller
+    ? undefined
+    : dy === 0 && dx === 0
+      ? 'Verschuif en kijk wat er verandert.'
+      : `Ander cijfer dan in het midden: ${getal(teller.anders)}.`
+
   return (
     <div className="relative h-full w-full">
       {/*
@@ -500,7 +688,20 @@ export default function VakjePerVakje() {
             bedieningspaneel heen. Met een tweede regel in deze alinea was dat
             nog 5,9 px. Nu blijft er 16 px tussen. Voeg hier geen regel bij
             zonder die drie formaten opnieuw te meten. */}
-        <p>Tel de rijtjes op en verschuif het beeldje.</p>
+        {/* Deze alinea is het VERHAAL, in de volgorde waarin het bord het
+            aflevert: het bord telt eerst zelf op, en daarna is het handvat er
+            om die optelling terug te draaien. "Tel de rijtjes op en verschuif
+            het beeldje" stond hier eerst, en dat was een opdracht voor een bord
+            dat de leerling al opgeteld aantrof - de eerste helft was dus al
+            gebeurd voor hij ze las. Het aantal rijtjes komt uit `ZIJDE` en niet
+            uit deze zin.
+
+            Eén regel, want de meting hierboven laat maar 5,9 px marge bij een
+            tweede. Dat het handvat de optelling terugdraait, staat daarom niet
+            hier maar onder het handvat zelf - en dat is ook de plek waar het
+            hoort, want bij 1024x768 klapt de Brief alles na de eerste alinea
+            in en blijft het paneel wel staan. */}
+        <p>Het bord telt de {getal(ZIJDE)} rijtjes één voor één op.</p>
         {/* Het aantal komt uit het exportbestand, niet uit deze zin. Zolang
             het model laadt staat er "alle", want dan is er nog niets geteld. */}
         <p>
@@ -510,11 +711,28 @@ export default function VakjePerVakje() {
       </Brief>
 
       {/*
-        LINKSONDER: de teller die de afloop meet, en de bediening. Dit paneel
-        staat er van bij het begin en verandert nooit van breedte. Canvas meet
-        elk paneel naast het bord en reserveert die breedte, dus een paneel dat
-        pas na een klik verschijnt zou het hele bord opnieuw kaderen terwijl de
-        leerling ernaar kijkt.
+        LINKSONDER: de bediening, en onder de bediening de teller die de afloop
+        meet. Dit paneel staat er van bij het begin en verandert nooit van
+        breedte. Canvas meet elk paneel naast het bord en reserveert die
+        breedte, dus een paneel dat pas na een klik verschijnt zou het hele
+        bord opnieuw kaderen terwijl de leerling ernaar kijkt.
+
+        DE LEESRICHTING WAS OMGEKEERD, en dat is nu de belangrijkste wijziging
+        in dit paneel. Bovenaan stond de teller over 120 beeldjes - de AFLOOP -
+        en daaronder de optelling die dit bord uitlegt. Een leerling die van
+        boven naar onder leest, kwam dus eerst de conclusie tegen en daarna de
+        uitleg, terwijl de kop van dit bestand zelf zegt dat de gemeten
+        brosheid de afloop is en niet het bord. De orde is nu het verhaal:
+
+          1  de optelling   het handvat, de knop, en waar je naartoe sleept
+          2  de stand       de vier richtingen en terug naar het midden
+          3  de teller      wat die stand met 120 beeldjes doet
+          4  het onderwerp  een ander beeldje
+
+        De teller staat daarmee ONDER de knoppen die hem laten bewegen, en zijn
+        eigen regel zegt in de openingstoestand wat je moet doen om dat te
+        zien. Hij blijft in het vaste deel van het paneel, dus hij valt op geen
+        enkel formaat onder de vouw.
 
         De hoogte is begrensd zoals op de andere borden, zodat de Brief
         bovenaan altijd vrij blijft. Alleen de uitleg onderin scrollt: de kop,
@@ -530,11 +748,13 @@ export default function VakjePerVakje() {
         dus dichter tegen de vier richtingen aan dan die vier onderling (6 px),
         terwijl de blokken eromheen wel lucht hadden.
 
-        De maat is nu: 6 px BINNEN een set, 14 px TUSSEN twee sets, en één
-        streepje in het hele paneel (tussen de vaststelling en de eerste set).
-        Een streepje tussen de sets kost 21 px, en bij 900x700 staat dit paneel
-        precies op zijn cap van 508 px, dus die 21 px zouden recht uit de
-        uitleg onderaan komen. De ladder doet hetzelfde werk voor 0 px.
+        De maat is nu: 6 px BINNEN een set en 14 px TUSSEN twee sets. Er staat
+        GEEN streepje meer in dit paneel. Het stond tussen de teller en de
+        eerste set, en met de teller onderaan is het daar niet meer nodig - de
+        ladder scheidt de vier blokken al. Die 21 px zijn precies wat de regel
+        onder het handvat kost, dus het nut van het handvat staat er nu voor
+        ongeveer nul px extra hoogte. Bij 900x700 staat dit paneel op zijn cap,
+        dus elke px die je hier bijzet, komt recht uit de uitleg onderaan.
 
         Alle vier de richtingen staan in een `grid-cols-2` met `full`, dus het
         paneel heeft op ELK formaat dezelfde vorm: vier regels, knoppen van
@@ -542,60 +762,32 @@ export default function VakjePerVakje() {
 
         NAGEMETEN in de browser, op de zes formaten waarop dit bord getoetst
         wordt. "vrij" is de hoogte die er na het vaste deel overblijft voor de
-        uitleg onderaan, en "gat" is de afstand tussen de onderkant van de
-        Brief en de bovenkant van dit paneel:
+        uitleg onderaan, "gat" is de afstand tussen de onderkant van de Brief
+        en de bovenkant van dit paneel, en "eerlijk" is hoeveel px van de
+        eerlijkheidszin onderaan zichtbaar is - haar eerste regel is 18,6 px:
 
-                     cap   vast   vrij   gat   knop
-          1440x900   572    397    137    66    148
-          1366x768   512    397     77    17    148
-          1280x800   544    397    109    17    148
-          1280x720   464    397     29    17    148
-          1024x768   560    422    100     7    108
-           900x700   492    422     32     7    108
+                     cap   vast   vrij   gat   knop   eerlijk
+          1440x900   577  410,3  132,7    84    148      37,1
+          1366x768   512  410,3   67,7    17    148      37,1
+          1280x800   544  410,3   99,7    17    148      37,1
+          1280x720   464  410,3   19,7    17    148      19,7
+          1024x768   560  410,3  115,7     7    108      37,1
+           900x700   492  410,3   47,7     7    108      37,1
 
-        Op geen enkel formaat valt een knop onder de vouw, staat er een
-        opschrift afgekapt (scrollWidth - clientWidth is overal 0) of ligt er
-        bordtekst onder een paneel. Bij 900x700 is 32 px net genoeg voor de
-        eerste regel van de uitleg (21,9 px), en dat is de reden dat de
-        eerlijkheidszin bovenaan dat blok staat.
+        Het vaste deel is nu op ELK formaat 410,3 px, waar het vroeger 397 bij
+        breed en 422 bij smal was: het opschrift naast "Ander beeldje" sloeg bij
+        222 px om naar een tweede regel en doet dat niet meer. Op geen enkel
+        formaat valt een knop onder de vouw, staat er een opschrift afgekapt
+        (scrollWidth - clientWidth is overal 0), ligt er bordtekst onder een
+        paneel of valt de eerste regel van de eerlijkheidszin weg. 1280x720 is
+        de krapste: daar is de vrije hoogte exact één regel, en dat is de reden
+        dat die zin `leading-snug` heeft en buiten het kadertje staat.
       */}
       <Panel className="pointer-events-auto absolute bottom-4 left-4 z-10 flex max-h-[calc(100%-13rem)] w-[16rem] flex-col px-4 py-3.5 xl:max-h-[calc(100%-16rem)] xl:w-[21rem]">
         <div className="shrink-0">
-          {/* De vaststelling: één regel die zegt wat de leerling nu waar
-              gemaakt heeft, met alle getallen uit de toestand van het bord en
-              door `getal()`, zodat het decimaalteken op elk bord hetzelfde is.
-
-              Vaste hoogte, ook als de detailregel er twee nodig heeft. Anders
-              schuift alles eronder op zodra die regel omslaat, en dan valt de
-              laatste regel van dit paneel bij 1024x768 net onder de rand.
-
-              De detailregel wisselt met wat de leerling aan het doen is.
-              Tijdens de optelling is het aantal beeldjes met een ander
-              antwoord niet waar hij naar kijkt, en het rijtje dat hij net zag
-              binnenkomen wel. Geen van beide noemt een winnaar. */}
-          <div className="min-h-[4.4rem]">
-            <Vaststelling
-              label="Juist"
-              value={teller ? teller.juist : null}
-              outOf={teller ? { total: teller.totaal, noun: 'beeldjes' } : undefined}
-              detail={
-                !teller
-                  ? undefined
-                  : klaar
-                    ? `Ander antwoord: ${getal(teller.anders)}.`
-                    : rijtje === 0
-                      ? 'Nog niets opgeteld.'
-                      : `Rijtje ${getal(rijtje)} bracht ${metTeken(bijdrageRijtje)} bij.`
-              }
-              empty="Het model wordt geladen."
-              color={NAVY}
-            />
-          </div>
-
-          <Divider />
-
           {/* SET 1: de optelling. Het handvat en de knop doen hetzelfde ding,
-              en staan daarom bij elkaar.
+              en staan daarom bij elkaar. Dit is nu het EERSTE blok van het
+              paneel: het is het mechanisme dat dit bord uitlegt.
 
               Kopje en waarde staan op ÉÉN regel, en dat is een meting en geen
               smaak: met de waarde onder het kopje was het vaste deel van dit
@@ -603,8 +795,13 @@ export default function VakjePerVakje() {
               1,7 px over voor de uitleg onderaan - de eerlijkheidszin over de
               120 beeldjes was op de beamervloer dus volledig onzichtbaar. Twee
               kopjes op één regel brengen dat op 47 px, precies genoeg voor de
-              eerste twee regels van die zin. */}
-          <Groep label="Opgeteld">
+              eerste twee regels van die zin.
+
+              "Optelling" en niet "Opgeteld": een kopje is op deze borden een
+              kort zelfstandig naamwoord, en een voltooid deelwoord zei
+              bovendien dat het al gebeurd was - wat bij aankomst ook zo was, en
+              dat was het gebrek. */}
+          <Groep label="Optelling">
             {`${getal(rijtje)} van de ${getal(ZIJDE)} rijtjes`}
           </Groep>
           {/* Het handvat. De opmaak staat al in index.css: spoor van 4 px, duim
@@ -626,6 +823,25 @@ export default function VakjePerVakje() {
               Tel opnieuw op
             </Btn>
           </div>
+          {/* WAAR HET HANDVAT VOOR DIENT. Zie het blok bij `handvatRegel`: één
+              regel, met de getallen van dit beeldje in deze stand, die zegt
+              waar je naartoe sleept en wat daar staat. Zonder deze regel noemt
+              het paneel alleen de toestand van het handvat en nooit zijn nut,
+              en dat was de vraag die dit bord kreeg.
+
+              13 px en niet 12,5, want dit is dezelfde soort regel als de regel
+              onder de teller en die staat op 13. Nagemeten met de letter van
+              het bord zelf: de langste variant hier is "Sleep naar rijtje 21:
+              cijfer 7 op kop." op 202 px, tegen 222 px inhoud bij 1024x768 en
+              900x700. Eén regel dus, met 20 px over.
+
+              `min-h` van één regel, zodat de knoppen eronder niet opschuiven
+              als de tekst van vorm wisselt. Twee regels mag deze niet worden:
+              bij 900x700 en 1280x720 gaat dat recht uit de eerlijkheidszin
+              onderaan. */}
+          <p className="mt-1 min-h-[1.15rem] text-[13px] leading-snug text-ink/80">
+            {model ? handvatRegel : ''}
+          </p>
 
           {/* SET 2: de stand. "Stand" en niet "Verschoven": in de begintoestand
               las dat als "Verschoven: in het midden", en dat spreekt zichzelf
@@ -667,7 +883,36 @@ export default function VakjePerVakje() {
             </Btn>
           </div>
 
-          {/* SET 3: het onderwerp. Een ander beeldje is geen andere stand, dus
+          {/* SET 3: DE TELLER, de afloop van set 2. Ze staat hier en niet meer
+              bovenaan het paneel, want ze meet wat de vier knoppen erboven
+              doen: eerst het mechanisme, dan de stand, dan wat die stand met
+              120 beeldjes doet.
+
+              Het label zegt nu waarover het getal gaat. "Juist" alleen liet
+              open bij welke stand die 111 hoorde, en dat is de helft van de
+              vraag die dit paneel kreeg; de andere helft was de regel eronder,
+              die "Ander antwoord: 0." zei zonder te zeggen ander dan wat.
+
+              Vaste hoogte van één detailregel, zodat "Ander beeldje" eronder
+              niet opschuift als de regel van vorm wisselt. Beide varianten van
+              `tellerRegel` zijn daarvoor onder de 40 tekens gehouden.
+
+              12 px erboven en niet de 14 van de ladder: de teller is de afloop
+              van de vier knoppen erboven en geen nieuwe set. Die 2 px plus de 2
+              onder het handvat zijn wat de eerlijkheidszin bij 1280x720 nodig
+              heeft om helemaal te passen. */}
+          <div className="mt-3 min-h-[4.4rem]">
+            <Vaststelling
+              label="Juist bij deze stand"
+              value={teller ? teller.juist : null}
+              outOf={teller ? { total: teller.totaal, noun: 'beeldjes' } : undefined}
+              detail={tellerRegel}
+              empty="Het model wordt geladen."
+              color={NAVY}
+            />
+          </div>
+
+          {/* SET 4: het onderwerp. Een ander beeldje is geen andere stand, dus
               het staat 14 px lager, in zijn eigen groep met de teller ernaast.
 
               De verschuiving blijft staan als je een ander beeldje neemt: dat
@@ -677,17 +922,25 @@ export default function VakjePerVakje() {
               naar het echte cijfer van het nieuwe beeldje: het cijfer van het
               vorige beeldje zou hier een toestand zijn die nergens meer bij
               hoort. En de balkas wordt hier opnieuw gerekend - dit is het
-              enige moment waarop dat eerlijk is. */}
+              enige moment waarop dat eerlijk is.
+
+              En het nieuwe beeldje wordt OPNIEUW OPGETELD, met `startNarratie`
+              in plaats van `setRijtje(ZIJDE)`. Een ander beeldje is een ander
+              onderwerp, dus het krijgt dezelfde opening als het eerste: de
+              leerling ziet de optelling gebeuren in plaats van er een afgelopen
+              versie van te krijgen. Dat is ook de enige manier waarop deze knop
+              op elk formaat zichtbaar iets doet - een beeldje dat vol opgeteld
+              verschijnt, verschilt van het vorige alleen in de vorm van de
+              inkt. */}
           <div className="mt-3.5 flex flex-wrap items-baseline gap-x-2 gap-y-1.5">
             <Btn
               variant="ghost"
               disabled={!model}
               onClick={() => {
-                stopTellen()
                 setNr(nr + 1)
-                setRijtje(ZIJDE)
                 setGekozenCijfer(null)
                 setAangewezen(null)
+                startNarratie()
               }}
             >
               Ander beeldje
@@ -695,35 +948,58 @@ export default function VakjePerVakje() {
             {/* Waar de leerling in de rij zit. Zonder dit is "Ander beeldje"
                 een knop zonder bodem: de teller gaat over een set die je niet
                 kan overzien. Met het nummer erbij is het dezelfde set die je
-                zelf kan doorlopen. Beide getallen komen uit de toestand. */}
+                zelf kan doorlopen. Beide getallen komen uit de toestand.
+
+                ER STOND "beeldje 1 van de 120", EN DAT KOSTTE 25 px. Bij 222 px
+                inhoud is de knop 132 px en het opschrift 110 px, samen met de
+                tussenruimte 250 px, dus dit blok sloeg om naar twee regels: 62,3
+                px voor één knop en één getal. Zonder het woord "beeldje" is het
+                66 px en past het naast de knop, en dan is dit blok 36,8 px. Die
+                25 px zijn precies wat de eerlijkheidszin onderaan bij 900x700
+                nodig heeft. Het woord ontbreekt ook niet echt: het staat op de
+                knop waar dit getal tegenaan staat. */}
             {aantal > 0 && (
               <span className="text-[13px] tabular-nums text-ink/80">
-                beeldje {getal(plek + 1)} van de {getal(aantal)}
+                {getal(plek + 1)} van de {getal(aantal)}
               </span>
             )}
           </div>
         </div>
 
-        <div className="mt-2 min-h-0 overflow-y-auto">
-          {/* Deze zin staat eerst omdat ze de eerlijkheid van dit bord draagt:
-              het openingsbeeldje is met opzet gekozen en ongeveer 4% van de
-              beeldjes kantelt per richting, dus het bord mag niet suggereren
-              dat elk beeldje zo reageert. Bij 900x700 valt de tweede regel van
-              dit blok in het scrollgebied, dus als er iets onder de rand valt,
-              moet het deze zin niet zijn. */}
-          <Note>
-            {/* De eerste vier woorden vormen een afgeronde bewering, en dat is
-                nodig: bij 900x700 is van dit blok maar 25,6 px zichtbaar, dus
-                één regel van 21,9 px. "Niet elk beeldje verandert van" brak
-                middenin een zinsdeel af en las als een stuk bord dat kapot is;
-                "Niet elk beeldje kantelt" staat er heel. `kantelt` is in dit
-                project al het woord voor een beeldje dat van antwoord
-                verandert. */}
-            <p>Niet elk beeldje kantelt bij één pixel. De teller zegt bij hoeveel wel.</p>
-            <p className="mt-1.5">
-              Een pixel zonder inkt telt niet mee, welk getal er ook op staat.
-            </p>
-          </Note>
+        {/* `mt-1` en niet `mt-2`: bij 900x700 en 1280x720 komt elke px hier
+            recht uit de eerste regel van de uitleg eronder. */}
+        <div className="mt-1 min-h-0 overflow-y-auto">
+          {/* DE EERLIJKHEIDSZIN, EN WAAROM ZE UIT HET KADERTJE GEHAALD IS.
+              Ze draagt de eerlijkheid van dit bord: het openingsbeeldje is met
+              opzet gekozen en ongeveer 4% van de beeldjes kantelt per richting,
+              dus het bord mag niet suggereren dat elk beeldje zo reageert.
+
+              Ze stond in de `Note` eronder, en die heeft `py-2`: 8 px die vóór
+              de eerste regel komen. Bij 1280x720 blijft er 22 px van dit
+              scrollgebied over, dus in het kadertje was van een regel van 21,9
+              px maar 14 px te zien. Als plattekst begint ze op 0 px en past ze
+              er helemaal in. Het kadertje houdt de tweede uitleg, die wel mag
+              wegscrollen.
+
+              De eerste vier woorden vormen een afgeronde bewering, en dat is
+              nodig: "Niet elk beeldje verandert van" brak middenin een zinsdeel
+              af en las als een stuk bord dat kapot is; "Niet elk beeldje
+              kantelt" staat er heel. `kantelt` is in dit project al het woord
+              voor een beeldje dat van antwoord verandert. */}
+          {/* `leading-snug` en niet `leading-relaxed`, wat het in het kadertje
+              was: 18,6 px per regel in plaats van 21,9. Bij 1280x720 blijft er
+              19,7 px van dit scrollgebied over, dus dat verschil is precies het
+              verschil tussen een hele eerste regel en een afgekapte. Het is ook
+              de regelafstand van elke andere korte regel in dit paneel. */}
+          <p className="text-[13.5px] leading-snug text-ink/85">
+            Niet elk beeldje kantelt bij één pixel. De teller zegt bij hoeveel wel.
+          </p>
+
+          <div className="mt-2">
+            <Note>
+              <p>Een pixel zonder inkt telt niet mee, welk getal er ook op staat.</p>
+            </Note>
+          </div>
 
           <div className="mt-2 text-[11.5px] leading-relaxed text-muted">
             In je notebook: <PyChip>lrmodel.predict(x_test)</PyChip>

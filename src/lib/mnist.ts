@@ -268,6 +268,58 @@ export function keuze(totaal: Float64Array): number {
   return beste
 }
 
+export type Koploper = {
+  /** Het laatste rijtje waarop een ander cijfer bovenaan stond. 1 tot 27. */
+  rijtje: number
+  /** Dat andere cijfer. */
+  cijfer: number
+}
+
+/**
+ * Het LAATSTE rijtje waarop een ander cijfer het hoogste totaal had dan het
+ * cijfer dat het model uiteindelijk kiest, en welk cijfer dat was.
+ *
+ * WAARVOOR DIT DIENT. Het bord kan de optelling stilzetten en terugdraaien,
+ * en de enige eerlijke reden om dat te doen is dit: het antwoord staat er nog
+ * niet. Deze functie geeft het bord één plek om naar te wijzen die op DIT
+ * beeldje in DEZE stand echt zo is, in plaats van een algemene bewering in de
+ * tekst. Bij het openingsbeeldje is dat rijtje 21 met cijfer 7, terwijl het
+ * model uiteindelijk 5 kiest.
+ *
+ * DAT ZO'N RIJTJE ER BIJNA ALTIJD IS, is gemeten en niet gehoopt. Over alle
+ * 120 beeldjes in alle negen standen, dus 1080 gevallen:
+ *
+ *   met een ander cijfer ergens op kop   1078 van 1080
+ *   zonder                                   2 van 1080  (beide bij "omhoog")
+ *   het laatste zo'n rijtje   min 3   p25 14   mediaan 19   p75 21   max 27
+ *
+ * In het midden is het 120 van 120, dus de openingstoestand van het bord heeft
+ * altijd een rijtje om naar te wijzen. Voor die twee gevallen geeft deze
+ * functie `null` en zegt het bord in plaats daarvan dat dit cijfer op kop
+ * bleef - ook dat is dan waar.
+ *
+ * WAAROM RIJTJE 0 NIET MEEDOET. Daar zijn de tien totalen alleen de
+ * constanten, en de grootste daarvan is in absolute waarde 0,0003. Alle tien
+ * de balken staan dus op nul en wie er dan "op kop" staat, is afrondingsruis.
+ * Daarom loopt de zoektocht van rijtje 27 terug tot 1.
+ *
+ * WAAROM HET LAATSTE EN NIET HET MIDDELSTE. Op rijtje 14 verschilt de
+ * koploper bij 94 van de 120 beeldjes van het antwoord, dus bij 26 zou het
+ * bord naar een rijtje wijzen waar toch al het juiste cijfer bovenaan staat.
+ * Het laatste zo'n rijtje bestaat wel bijna altijd, en het is ook de sterkere
+ * plek: bij het openingsbeeldje staat op rijtje 21 van de 28 nog een ander
+ * cijfer bovenaan.
+ */
+export function laatsteAndereKoploper(perRijtje: Float64Array): Koploper | null {
+  const n = perRijtje.length / (ZIJDE + 1)
+  const eind = keuze(perRijtje.subarray(ZIJDE * n, ZIJDE * n + n))
+  for (let r = ZIJDE - 1; r >= 1; r--) {
+    const c = keuze(perRijtje.subarray(r * n, r * n + n))
+    if (c !== eind) return { rijtje: r, cijfer: c }
+  }
+  return null
+}
+
 /** De keuze van het model voor elk beeldje in het bestand, bij één stand. */
 export function keuzes(model: PixelModel, dy: number, dx: number): Int8Array {
   const uit = new Int8Array(model.beelden.length)
