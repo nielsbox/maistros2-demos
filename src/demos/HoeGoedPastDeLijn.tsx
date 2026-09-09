@@ -65,12 +65,39 @@ export default function HoeGoedPastDeLijn() {
           <>
             {/* De referentie waar de score tegen afgemeten wordt. Staat er altijd. */}
             <LineShape line={MEAN_LINE} scales={s} color={GEMIDDELDE} width={1.75} dashed />
+            {/*
+              "Altijd het gemiddelde" is de naam uit de woordenlijst voor deze
+              streepjeslijn, en de hele score op dit bord wordt ertegen
+              afgemeten. Het stond op 11 px zonder witte rand, en dat was na de
+              vergroting van de asgetallen de enige tekst op de negen borden
+              die nog onder de huisvloer van 13 px lag. Van achter in de klas
+              was het de kleinste tekst op het bord, terwijl het het ijkpunt
+              benoemt.
+
+              Nu 13 px, vet, met dezelfde witte rand als de asgetallen. De rand
+              doet hier extra werk: de tekst ligt op de streepjeslijn zelf, en
+              zonder rand liepen de streepjes door de letters.
+
+              DE KLEUR BLIJFT LICHTER dan --color-muted, met opzet: deze lijn
+              hoort achter de lijn van het model te liggen. Groter en vet maakt
+              hem leesbaar, de kleur houdt hem op de achtergrond.
+
+              Gemeten na de wijziging, de vrije ruimte tot het naaste asgetal
+              in dezelfde kolom (het label wordt 17,0 px hoog in plaats van
+              14,5):
+                1024x768   "50" 8,8 px eronder, "60" 20,3 px erboven
+                 900x700   "40" 64,5 px eronder, "60" 15,4 px erboven
+              De rechterkant schuift van 451 naar 471 px; daar staat niets.
+            */}
             <text
               x={s.safe.left + 12}
               y={s.sy(CY) - 9}
-              fontSize={11}
-              fontWeight={500}
+              fontSize={13}
+              fontWeight={700}
               fill={GEMIDDELDE_TEKST}
+              stroke="#fff"
+              strokeWidth={3.5}
+              paintOrder="stroke"
               pointerEvents="none"
             >
               altijd het gemiddelde

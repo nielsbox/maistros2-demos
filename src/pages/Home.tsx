@@ -61,20 +61,28 @@ const LESSONS: Lesson[] = [
     /* Twee borden in deze les, en ze staan in deze volgorde omdat de tweede
        verder bouwt op de eerste: eerst zie je waar een kans vandaan komt,
        daarna knip je die kans door. De doelen mogen dus niet op elkaar lijken -
-       "hoe wordt de kans gemaakt" tegen "wat kost een grens". */
+       "hoe wordt de kans gemaakt" tegen "wat kost een grens".
+
+       BEIDE DOELEN BEGINNEN MET "JIJ", en dat is het onderscheid dat een
+       leerkracht van deze kaarten af moet kunnen lezen: wat doe JIJ op dat
+       bord. Bouwen tegen leggen. Dat is hetzelfde werkwoord als in de eerste
+       regel van de Brief op het bord zelf ("Jij bouwt zelf de curve ..." en
+       "Sleep de grens tussen rotsblok en mijn ..."), alleen korter, want een
+       kaart is geen opdracht. Wie het werkwoord op een van de twee plekken
+       verandert, verandert het op de andere mee. */
     demos: [
       {
         to: '/les3/van-getal-naar-kans',
         title: 'Van getal naar kans',
         soort: 'mini-demo',
-        doel: 'Het model maakt van een getal een kans',
+        doel: 'Jij bouwt de curve die van een getal een kans maakt',
         doen: 'De curve zet de groenwaarde van een rij om in een kans. Sleep haar naar de beste plek en lees de zekerheid af. Laat daarna de computer dezelfde zoektocht doen.',
       },
       {
         to: '/les3/waar-leg-jij-de-grens',
         title: 'Waar leg jij de grens?',
         soort: 'mini-demo',
-        doel: 'Elke grens maakt een andere soort fout',
+        doel: 'Jij legt de grens en kiest zo welke fout het model maakt',
         doen: 'Elke rij van de sonardata staat op één as, bij de kans die het model eraan geeft. Sleep de grens en lees af hoeveel mijnen en hoeveel rotsblokken het model mist. Er is geen grens die alles wint.',
       },
     ],

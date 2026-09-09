@@ -141,10 +141,43 @@ const TREFVLAK = 17
 /**
  * Hoever een randmerk van de rand van het VRIJE vlak blijft. Het vrije
  * vlak (scales.safe) is wat de panelen overlaten, dus dit hoeft niet meer
- * per paneel nagemeten te worden zoals in de vorige versie. Onderaan meer
- * ruimte, want daar staan de tick-labels en het x-as-label.
+ * per paneel nagemeten te worden zoals in de vorige versie. Onder EN boven
+ * meer ruimte, want daar staat de astekst: onderaan de asgetallen en
+ * "schoenmaat", bovenaan "lengte (cm)".
+ *
+ * BOVENAAN STOND 26 EN DAT IS TE KRAP. Canvas zet de naam van de y-as op
+ * safe.top + 16, en een randmerk zette zijn label op safe.top + 26 + 5. Twee
+ * regels, 15 px uit elkaar, in dezelfde hoek: gemeten met getBBox door
+ * getScreenCTM liepen de emvakken van "1 rij buiten beeld" en "lengte (cm)"
+ * 37,3 bij 3,0 px door elkaar, op 1024x768 en op 900x700 even erg, en de witte
+ * randen eromheen namen elk nog 1,75 px mee. De rij van 364 cm ligt namelijk
+ * ver boven het vlak, dus dat merk wordt altijd tegen de bovenrand geklemd.
+ *
+ * 44 is niet gekozen maar gerekend, en het is aan safe.top geklonken, dus het
+ * klopt op elk formaat: de naam van de y-as houdt onderaan inkt tot
+ * safe.top + 18,9, het label van een randmerk begint bovenaan op
+ * safe.top + RANDMARGE.top - 4,7, en 44 laat daar 20,7 px tussen.
+ *
+ * ONDERAAN BLIJFT HET 44, EN DAAR IS EEN BEKEND MANKEMENT MEE. Op sommige
+ * breedtes loopt het label van de twee rijen in meter door de naam van de
+ * x-as: gemeten 30,1 bij 3,3 px inkt op 1280x720 en 1,6 bij 3,3 px op
+ * 1366x768, terwijl het op 900x700, 1024x768, 1280x800 en 1440x900 links van
+ * die naam blijft en niets raakt. Een randmerk hangt in de hoogte aan de rand
+ * maar in de breedte aan zijn eigen rij, dus of die twee elkaar vinden hangt
+ * van de breedte af.
+ *
+ * DEZELFDE REKENSOM ALS BOVEN ZEGT 60, EN 60 IS FOUT. Gemeten op 900x700:
+ * op safe.bottom - 60 ligt dat label bovenop de twee vrouwen van 157 cm
+ * (maat 37 en 38), en het label van een randmerk vangt zelf klikken op - het
+ * hoort bij een <g> met handlers. elementFromPoint op het middelpunt van die
+ * twee merken gaf dan de tekst en niet het merk, dus een leerling klikt een
+ * rij aan en er gebeurt niets. Op 44 staat het label 7,5 px onder die merken
+ * en klikken ze weer zelf. Wie dit oplost, doet dat dus in de BREEDTE - het
+ * label naar links laten wijken zoals het al doet bij de rechterrand, met de
+ * naam van de x-as als extra muur - en meet daarna opnieuw welke merken eronder
+ * liggen.
  */
-const RANDMARGE = { top: 26, right: 22, bottom: 44, left: 22 }
+const RANDMARGE = { top: 44, right: 22, bottom: 44, left: 22 }
 
 /**
  * Randmerken die dichter dan dit bij elkaar landen, worden één merk. Breed

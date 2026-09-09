@@ -46,6 +46,26 @@ const MIN_SPAN = 1e-6
 const MAX_SPAN = 1e9
 
 /**
+ * De getallen langs de assen. Elk bord leest van achter in de klas mee, en de
+ * huisvloer voor tekst op het bord is 13 px, vet, met een witte rand eromheen.
+ * Deze getallen stonden op 12,5 px met gewicht 600 en een rand van 3 px: onder
+ * de vloer, op elk bord dat assen laat zien. Op "Van getal naar kans" waren dat
+ * twintig getallen op 1024x768.
+ *
+ * WAAROM 13 EN NIET 13,5. De twee asnamen staan op 13,5 px, vet, in de
+ * inktkleur. Zetten we deze getallen ook op 13,5, dan is de naam van de as niet
+ * meer groter dan de getallen erlangs en valt de rangorde weg. 13 haalt de
+ * vloer en houdt het verschil. Het is bovendien de kleinste stap, en dus de
+ * kleinste kans dat een breder getal tegen zijn buur of tegen een paneel loopt.
+ * Gemeten na de wijziging op alle negen borden, op 1024x768 en 900x700: geen
+ * enkel paar asgetallen raakt elkaar, en geen merk of label ligt onder een
+ * paneel. De ruimte tussen twee asgetallen komt uit `ticks()` hieronder en is
+ * ongeveer 120 px in x en 90 px in y, dus een half punt breder getal past er
+ * ruim in.
+ */
+const TICK_PX = 13
+
+/**
  * How much of an axis the two floating panels may claim between them. What is
  * left over is the free band the data is framed into, so this is also the
  * promise "the data keeps at least a third of each axis".
@@ -617,11 +637,11 @@ export default function Canvas({
                 x={scales.sx(t)}
                 y={ih - safe.bottom - 10}
                 textAnchor="middle"
-                fontSize={12.5}
-                fontWeight={600}
+                fontSize={TICK_PX}
+                fontWeight={700}
                 fill="#6b6d88"
                 stroke="#fff"
-                strokeWidth={3}
+                strokeWidth={3.5}
                 paintOrder="stroke"
               >
                 {fmt(t)}
@@ -629,18 +649,31 @@ export default function Canvas({
             ))}
           {axes &&
             majorY
-            .filter((t) => scales.sy(t) >= safe.top + 10 && scales.sy(t) <= ih - safe.bottom - 22)
+            /*
+             * De onderste grens houdt het laatste y-getal weg uit de hoek waar
+             * de x-getallen staan. Ze stond op 22 px en dat was te krap: een
+             * x-getal heeft zijn basislijn op ih - safe.bottom - 10 en loopt
+             * dus van -23 tot -6, terwijl een y-getal op sy + 4 staat en tot
+             * sy + 8 doorloopt. Alles boven -31 kan elkaar dus raken. Gemeten
+             * op Data-dokter, 900x700: "35" langs de onderrand en "155" langs
+             * de linkerrand overlapten 6,4 bij 2,5 px op 12,5 px tekst en 7,5
+             * bij 3,0 px op 13. Het is een hoekbotsing, dus ze hangt aan de
+             * data: ze verschijnt zodra het linkse x-getal in de eerste 30 px
+             * van de vrije band valt. 32 haalt ze weg voor elke data set en
+             * kost hoogstens één y-getal onderaan.
+             */
+            .filter((t) => scales.sy(t) >= safe.top + 10 && scales.sy(t) <= ih - safe.bottom - 32)
             .map((t) => (
               <text
                 key={`ty${t}`}
                 x={safe.left + 8}
                 y={scales.sy(t) + 4}
                 textAnchor="start"
-                fontSize={12.5}
-                fontWeight={600}
+                fontSize={TICK_PX}
+                fontWeight={700}
                 fill="#6b6d88"
                 stroke="#fff"
-                strokeWidth={3}
+                strokeWidth={3.5}
                 paintOrder="stroke"
               >
                 {fmt(t)}
@@ -969,14 +1002,20 @@ export function DragDot({
     >
       <circle cx={cx} cy={cy} r={r + 10} fill={color} opacity={0.12} />
       <circle cx={cx} cy={cy} r={r} fill={color} stroke="#fff" strokeWidth={2.5} />
+      {/* Zelfde vloer als de asgetallen: 13 px, vet, met een witte rand. Dit
+          woord staat boven de rasterlijnen en soms boven de punten, en het had
+          als enige tekst op het bord geen rand. */}
       {label && (
         <text
           x={cx}
           y={cy - r - 11}
           textAnchor="middle"
-          fontSize={12.5}
+          fontSize={TICK_PX}
           fontWeight={700}
           fill={color}
+          stroke="#fff"
+          strokeWidth={3.5}
+          paintOrder="stroke"
           pointerEvents="none"
         >
           {label}

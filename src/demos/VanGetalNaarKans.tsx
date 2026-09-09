@@ -356,10 +356,18 @@ export default function VanGetalNaarKans() {
         portaal nooit, dus staat het doel niet op het bord, dan staat het
         nergens.
 
-        Het doel zegt nu wat de LES zegt: logistische regressie maakt van elke
-        rij een getal tussen 0 en 1. De vorige versie opende met "deze curve
-        zet de groenwaarde om in een kans", en dat zijn drie woorden die in les
-        3 geen van de drie voorkomen.
+        HET DOEL ZEGT WAT DIT BORD JE LAAT DOEN, en dat is nodig omdat er twee
+        borden bij les 3 horen. Het zei eerder "logistische regressie maakt van
+        elke rij een getal tussen 0 en 1", en dat is dezelfde bewering als op
+        "Waar leg jij de grens?" ("het model geeft per rij een getal tussen 0 en
+        1"). Twee borden, één zin: een leerling die alleen zit, weet dan niet
+        welk bord hij open heeft. De taakverdeling: hier MAAK je de kans, op het
+        andere bord KNIP je hem door. Vandaar dat de eerste woorden hier het
+        bouwen noemen, en daar het slepen van de grens.
+
+        `curve` en niet `lijn`: een lijn is in dit project recht (les 1 en 2),
+        een curve is de S. `zelf` staat er om het verschil met het andere bord
+        vast te houden: daar is het model al getraind.
 
         WAT ER NIET IN STAAT: de uitleg per stap. Onder 1280 px klapt alles na
         de eerste alinea weg, en op de beamervloer is dat precies waar een
@@ -370,9 +378,16 @@ export default function VanGetalNaarKans() {
         {/* EEN ZIN, en dat is gemeten: met een tweede zin erbij werd deze Brief
             164 px hoog en schoof hij 4 px over het paneel eronder. Wat je moet
             DOEN staat in dat paneel, in de stap die open staat, en dat paneel
-            klapt nooit in. */}
-        <p>Logistische regressie maakt van elke rij een getal tussen 0 en 1.</p>
-        <p>Dat getal is de kans dat de rij bij Albert hoort. Hier maak je die kans zelf.</p>
+            klapt nooit in.
+
+            De herformulering blijft binnen dat budget, want ze is even hoog als
+            de zin die er stond: twee regels, 47,1 px, gemeten voor en na op
+            1024x768 en op 900x700. De Brief blijft 140,1 px ingeklapt en 207,1
+            px uitgeklapt, en de overlap met het paneel eronder is 0 px op
+            900x700, 1024x768, 1280x720, 1280x800, 1366x768 en 1440x900. De
+            tweede alinea idem: 45,5 px voor en na. */}
+        <p>Jij bouwt zelf de curve die van een getal een kans maakt.</p>
+        <p>Dat getal is de kans dat de rij bij Albert hoort. Dit heet logistische regressie.</p>
         <p>Volg de drie stappen in het paneel linksonder.</p>
       </Brief>
 
@@ -822,33 +837,83 @@ function Bandlijn({
 }
 
 /**
+ * Van waar tot waar de merken van één rij op de x-as liggen. Geteld uit de
+ * data, want welk uiteinde van een rij leeg is, is een eigenschap van het
+ * bestand en niet van het ontwerp: Albert loopt van 0,2178 tot 0,7910 en heeft
+ * dus links ruimte over, Blahaj van 0 tot 0,2756 en dus rechts.
+ */
+const BEREIK = (() => {
+  const uit = (albert: boolean) => {
+    const g = RIJEN.filter((r) => r.albert === albert).map((r) => r.groen)
+    return { eerste: Math.min(...g), laatste: Math.max(...g) }
+  }
+  return { albert: uit(true), blahaj: uit(false) }
+})()
+
+/**
  * Welke rij welke is. Zonder deze twee regels moet een leerling de klasse uit
  * de hoogte raden, en dan draagt de y-as betekenis die nergens staat.
  */
 function Rijnamen({ scales: s }: { scales: Scales }) {
   return (
     <g pointerEvents="none">
-      <text
-        x={s.safe.left + 8}
-        y={s.sy(1) - 14}
-        fontSize={13.5}
-        fontWeight={700}
-        fill={INK}
-        {...HALO}
-      >
-        {`Albert, antwoord 1 (${getal(AANTAL_ALBERT)} rijen)`}
-      </text>
-      <text
-        x={s.safe.left + 8}
-        y={s.sy(0) + 30}
-        fontSize={13.5}
-        fontWeight={700}
-        fill={INK}
-        {...HALO}
-      >
-        {`Blahaj, antwoord 0 (${getal(AANTAL_BLAHAJ)} rijen)`}
-      </text>
+      <Rijnaam albert scales={s} />
+      <Rijnaam albert={false} scales={s} />
     </g>
+  )
+}
+
+/**
+ * EEN REGEL VOOR BEIDE NAMEN: de naam staat 14 px boven zijn eigen rij, aan het
+ * uiteinde waar die rij geen merken heeft. Welk uiteinde dat is, wordt in
+ * pixels van dit moment geteld, dus de keuze blijft kloppen als een leerling
+ * pant of zoomt.
+ *
+ * WAAROM DE NAAM VAN BLAHAJ NIET MEER ONDER ZIJN RIJ STAAT. Daar staan de
+ * asgetallen. Gemeten met getBBox door getScreenCTM, op de standaardstand:
+ * het emvak van "Blahaj, antwoord 0 (44 rijen)" liep op 1024x768 7,3 bij 4,1 px
+ * door dat van de "0" langs de onderrand en 0,9 bij 4,1 px door dat van "0,2",
+ * en op 900x700 7,3 bij 9,3 px en 17,7 bij 9,3 px - daar raken de glyphs zelf
+ * elkaar, 6,3 bij 4,3 px en 16,7 bij 4,3 px inkt.
+ *
+ * Optillen lost dat niet op, het verplaatst het alleen: op 900x700 is de band
+ * tussen de "0" langs de linkerrand en de asgetallen onderaan 16,7 px, en het
+ * emvak van de naam is 17,5 px hoog. Hij raakt boven dus wat hij onder
+ * loslaat, en 5 px hoger zit hij bovendien op zijn eigen merken en op de naam
+ * van de stapel, die 16 px boven datzelfde merk hangt.
+ *
+ * Er moest dus ruimte bij, en die is er naast de rij zelf. Gemeten van de rand
+ * van het vrije vlak tot het eerste of laatste merk van die rij, met een naam
+ * van 171 px ernaast gelegd:
+ *
+ *   Blahaj loopt tot groen 0,2756 en houdt RECHTS 420,5 px vrij op 1024x768 en
+ *     341,7 px op 900x700;
+ *   Albert loopt vanaf 0,2178 en houdt LINKS 199,9 px vrij op 1024x768 en
+ *     162,5 px op 900x700, dus die naam blijft staan waar hij stond.
+ *
+ * Dat Albert op 900x700 8,5 px korter komt dan zijn eigen naam breed is, geeft
+ * niets: de naam hangt boven de rij en niet ernaast, dus hij houdt daar 5,6 px
+ * inkt over zijn eigen merken en raakt ze nooit. Het vrije uiteinde bepaalt
+ * alleen aan welke kant de naam bij zijn rij hoort, en houdt hem weg van het
+ * dichtste stuk ervan.
+ */
+function Rijnaam({ albert, scales: s }: { albert: boolean; scales: Scales }) {
+  const { eerste, laatste } = albert ? BEREIK.albert : BEREIK.blahaj
+  const naarLinks = s.sx(eerste) - s.safe.left >= s.safe.right - s.sx(laatste)
+  return (
+    <text
+      x={naarLinks ? s.safe.left + 8 : s.safe.right - 14}
+      y={s.sy(albert ? 1 : 0) - 14}
+      textAnchor={naarLinks ? 'start' : 'end'}
+      fontSize={13.5}
+      fontWeight={700}
+      fill={INK}
+      {...HALO}
+    >
+      {albert
+        ? `Albert, antwoord 1 (${getal(AANTAL_ALBERT)} rijen)`
+        : `Blahaj, antwoord 0 (${getal(AANTAL_BLAHAJ)} rijen)`}
+    </text>
   )
 }
 

@@ -259,14 +259,17 @@ export default function WaarLegJijDeGrens() {
           ("Oefening 1", "Oefening 2"). Dit bord is de sonardata van oefening 2,
           "Van getal naar kans" de kleuren van oefening 1. */}
       <Brief eyebrow="mAIstros 2 - les 3, oefening 2" title="Waar leg jij de grens?">
-        {/* Het doel zegt "een getal", want zo staat het in de les, en knoopt
-            dat in dezelfde zin vast aan "kans", het woord dat het bord verder
-            overal gebruikt. Dat stond eerst in een alinea apart, en die alinea
-            was 44 px die dit bord niet had: uitgeklapt werd de Brief dan 283 px
-            hoog en schoof het onderste paneel eroverheen - 10 px op 1366x768 en
-            58 px op 1280x720. Nu is deze Brief net zo hoog als die van de
-            andere borden. */}
-        {/* DE OPDRACHT STAAT IN DEZE EERSTE ALINEA EN NIET IN EEN TWEEDE.
+        {/* DE EERSTE WOORDEN ZEGGEN WAT DIT BORD JE LAAT DOEN: de grens
+            slepen. Les 3 heeft twee borden, en de doelzin hier en op "Van
+            getal naar kans" waren dezelfde bewering ("het model geeft per rij
+            een getal tussen 0 en 1" tegen "logistische regressie maakt van
+            elke rij een getal tussen 0 en 1"). Geen van de twee zei wat je op
+            dat bord kon doen, dus een leerling die alleen zit, wist niet welk
+            van de twee hij open had. De taakverdeling: op het andere bord MAAK
+            je de kans, hier KNIP je hem door. Vandaar dat het slepen van de
+            grens nu vooraan staat en het bouwen van de curve daar.
+
+            DE OPDRACHT STAAT IN DEZE EERSTE ALINEA EN NIET IN EEN TWEEDE.
             Brief toont alleen zijn eerste kind altijd; al de rest is detail en
             staat dichtgeklapt tot 80rem (1280px). "Sleep de grens" stond daar,
             dus op 1024x768 en 900x700 - de formaten waarop een leerling die
@@ -275,10 +278,18 @@ export default function WaarLegJijDeGrens() {
             opdracht mag nooit achter een uitklapper. Het is met opzet één
             alinea van twee zinnen en geen tweede alinea: een tweede alinea kost
             44px die dit bord niet heeft, en dat schoof het onderste paneel
-            eerder al over de Brief (10px op 1366x768, 58px op 1280x720). */}
+            eerder al over de Brief (10px op 1366x768, 58px op 1280x720).
+
+            DE TWEEDE ZIN BLIJFT DE BRUG NAAR DE WOORDEN VAN DE LES. `kans`
+            staat nul keer in les 3; de les zegt "een getal tussen 0 en 1"
+            (slide 2128358). Die twee staan daarom in één zin naast elkaar,
+            voordat de asnaam eronder "kans op een mijn" zegt. Deze alinea is
+            124 tekens tegen 121 eerder, dus even hoog: gemeten na de
+            wijziging is de overlap met het paneel eronder 0 px op 1024x768 en
+            op 900x700. */}
         <p>
-          Het model geeft per rij een getal tussen 0 en 1: de kans op een mijn.
-          Sleep de grens en kijk wat het model dan mist.
+          Sleep de grens tussen rotsblok en mijn, en kijk wat het model dan mist. Elke rij staat
+          op zijn kans, een getal tussen 0 en 1.
         </p>
         {/* De moraal van dit bord, en daarom staat ze in de Brief en niet in
             het paneel. Ze verandert nooit mee met de grens, dus het is kader
@@ -293,17 +304,23 @@ export default function WaarLegJijDeGrens() {
         elke .panel ernaast en houdt die breedte vrij (gemeten: 1,45x op 1024 px).
 
         Twee hoogtegrenzen, want de Brief is niet altijd even hoog. Onder 1280 px
-        staat de Brief ingeklapt op 146 px en is 12rem genoeg, zoals op de andere
-        borden. Vanaf 1280 klapt hij uit naar 230 px, en dan moet dit paneel 17rem
-        vrijlaten. Gemeten na de wijziging, telkens de overlap tussen de twee
-        panelen:
+        staat de Brief ingeklapt op 187 px, en dan houdt dit paneel 13,75rem
+        vrij. Vanaf 1280 klapt hij uit naar 200 px, en dan moet dat 17rem zijn.
+        Gemeten, telkens de overlap tussen de twee panelen en de ruimte die
+        ertussen blijft:
 
-          1440x900  0 px      1366x768  0 px      1280x800  0 px
-          1280x720  0 px      1024x768  0 px       900x700  0 px
+          1440x900  0 px, 185 over    1366x768  0 px, 53 over
+          1280x800  0 px,  85 over    1280x720  0 px, 40 over
+          1024x768  0 px,   4 over     900x700  0 px,  1 over
 
         Zonder de xl-grens overlapten ze op 1280x720 nog 23 px. Op dat formaat
-        en op 900x700 scrollt de onderkant van dit paneel wel (34 en 53 px);
+        en op 900x700 scrollt de onderkant van dit paneel wel (35 en 65 px);
         dat is de uitleg en de notebookregel, nooit een knop.
+
+        DE MARGE ONDERAAN IS 4 px op 1024x768 en 1 px op 900x700, en dat is de
+        reden dat de doelzin hierboven precies even hoog moest blijven als de
+        zin die er stond: vier regels, 94,3 px, op beide formaten gemeten voor
+        en na de herformulering. Eén regel erbij is hier een overlap.
       */}
       <Panel className="pointer-events-auto absolute bottom-4 left-4 z-10 max-h-[calc(100%-13.75rem)] w-[16rem] overflow-y-auto px-4 py-3 xl:max-h-[calc(100%-17rem)] xl:w-[21rem]">
         {/* Het getal dat de leerling verschuift, en het enige dat groot staat.
@@ -600,7 +617,11 @@ function KansAs({ scales: s }: { scales: Scales }) {
             y={s.safe.bottom - 10}
             textAnchor="middle"
             fontSize={13}
-            fontWeight={600}
+            /* Zelfde behandeling als de asgetallen die Canvas tekent: 13 px,
+               vet, met een witte rand. Die stonden op 12,5 px en gewicht 600,
+               onder de huisvloer; nu ze op 13 en 700 staan, staat dit bord
+               daar niet naast met een lichtere 600. */
+            fontWeight={700}
             fill={MUTED}
             {...HALO}
           >
