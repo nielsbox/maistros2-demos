@@ -63,6 +63,16 @@ import { DATA, FOUT, INK, MODEL, MUTED, NAVY, RULE } from '../lib/palette'
  *      "Ander antwoord: 0." zonder te zeggen ander dan wat - zie
  *      `tellerRegel`.
  *
+ * EN DAARNA HAD DE ANDERE HELFT VAN DAT PANEEL DEZELFDE FOUT. Niels, op de vier
+ * richtingsknoppen: "Too much interpretation here too. What does stand do? What
+ * is the point?" Het blok had twee kopjes over hetzelfde ding - "Stand - in het
+ * midden" boven de knoppen en "Juist bij deze stand" eronder - en als enige
+ * doelregel "Verschuif en kijk wat er verandert.", een opdracht die niet zegt
+ * wat je te weten komt. Er is dus niets bijgekomen maar samengevoegd: de stand
+ * is het kopje van de teller geworden, boven de knoppen staat nu de reden ("De
+ * inkt verschuift, de getallen niet.") en onder het getal staat de uitkomst,
+ * nagerekend op het bestand zelf. Zie de blokken bij `tellerRegel` en bij SET 2.
+ *
  * DAT DE LES DIT NERGENS UITLEGT, IS GEMETEN OP DE LES ZELF. Over alle 94
  * slides van lc 4510 komen de woorden gewicht, weegt, "telt op", optellen en
  * "per pixel" 0 keer voor. Stap 5 (2128387) roept `LogisticRegression()` aan
@@ -89,8 +99,8 @@ import { DATA, FOUT, INK, MODEL, MUTED, NAVY, RULE } from '../lib/palette'
  *   in het midden          111   92,5 %                                   0
  *   1 pixel omhoog         103   85,8 %                                  14
  *   1 pixel omlaag         100   83,3 %                                  20
- *   1 pixel naar links     103   85,8 %                                  18
- *   1 pixel naar rechts    102   85,0 %                                  16
+ *   1 pixel links          103   85,8 %                                  18
+ *   1 pixel rechts         102   85,0 %                                  16
  *   omhoog en links         87   72,5 %                                  32
  *   omhoog en rechts        97   80,8 %                                  21
  *   omlaag en links         94   78,3 %                                  26
@@ -292,19 +302,47 @@ function metTeken(v: number): string {
 }
 
 /**
+ * De acht standen die de vier richtingsknoppen kunnen bereiken, als [dy, dx].
+ * Het midden staat er niet in: dat is waar de teller mee vergelijkt.
+ */
+const VERSCHUIVINGEN: [number, number][] = [
+  [-1, 0],
+  [1, 0],
+  [0, -1],
+  [0, 1],
+  [-1, -1],
+  [-1, 1],
+  [1, -1],
+  [1, 1],
+]
+
+/**
  * De verschuiving in woorden. Dit is de enige plaats waar ze beschreven staat.
  *
  * "1 pixel" staat er één keer en niet bij elke richting. "1 pixel omhoog en
- * 1 pixel naar rechts" was 37 tekens en dat past bij 222 px inhoud niet naast
- * het kopje op één regel; "1 pixel omhoog en naar rechts" is 29 tekens, zegt
- * hetzelfde en past wel.
+ * 1 pixel rechts" was te lang voor de 222 px inhoud van het paneel; "1 pixel
+ * omhoog en rechts" zegt hetzelfde en past wel.
+ *
+ * DE RICHTINGEN HETEN HIER PRECIES ZOALS DE KNOPPEN, en dat is een wijziging.
+ * Er stond "1 pixel naar links" naast een knop met het opschrift "Links", dus
+ * één richting met twee namen. Nu leest de stand terug wat de leerling net
+ * indrukte: omhoog, omlaag, links, rechts. Het is ook een positie en geen
+ * beweging - de knop verschuift, dit kopje zegt waar het beeldje daarna staat.
+ *
+ * Deze woorden zijn nu HET KOPJE VAN DE TELLER en staan niet meer los boven de
+ * knoppen - zie het blok bij `tellerRegel`. Dat maakt de breedte hard: het
+ * kopje is kleinkapitaal van 11,5 px, en daarin meet de langste stand, "1 PIXEL
+ * OMHOOG EN RECHTS", 182,5 px tegen 222 px inhoud. Met "naar" erin was dat
+ * 221,1 px, dus 0,9 px marge, en één breder lettertype had het kopje op twee
+ * regels gezet en alles eronder verschoven. Eén regel dus in alle negen de
+ * standen, met 39 px over. Maak deze zin niet langer zonder dat na te meten.
  */
 function standInWoorden(dy: number, dx: number): string {
   const delen: string[] = []
   if (dy === -1) delen.push('omhoog')
   if (dy === 1) delen.push('omlaag')
-  if (dx === -1) delen.push('naar links')
-  if (dx === 1) delen.push('naar rechts')
+  if (dx === -1) delen.push('links')
+  if (dx === 1) delen.push('rechts')
   return delen.length === 0 ? 'in het midden' : `1 pixel ${delen.join(' en ')}`
 }
 
@@ -319,9 +357,10 @@ function standInWoorden(dy: number, dx: number): string {
  * eerste twee regels van die uitleg nodig hebben.
  *
  * `justify-between` en geen wrap: deze regel mag niet omslaan, want dan
- * verschuift alles eronder zodra de leerling verschuift. Daarom is de
- * langste waarde ook nagemeten - "1 pixel omlaag en naar rechts" op 13 px
- * naast het kopje "Stand" blijft binnen de 222 px inhoudsbreedte.
+ * verschuift alles eronder zodra de leerling iets doet. Van de twee groepen die
+ * dit paneel had, is er één over - "Optelling - 28 van de 28 rijtjes" - en
+ * daarin is de langste waarde 110,9 px naast een kopje van 68,7 px, samen met
+ * de tussenruimte 187,6 px tegen 222 px inhoud.
  */
 function Groep({ label, children }: { label: string; children: string }) {
   return (
@@ -499,7 +538,7 @@ export default function VakjePerVakje() {
       /* Functionele updates, geen `dy - 1` uit de omsluitende render. Twee
          klikken in hetzelfde tikje (of React die ze samenvoegt) lazen anders
          allebei dezelfde oude waarde, en dan gaat één van de twee verloren:
-         "Omlaag" en daarna "Rechts" leverde alleen "1 pixel naar rechts". */
+         "Omlaag" en daarna "Rechts" leverde alleen "1 pixel rechts". */
       if (ddy !== 0) setDy((v) => clamp(v + ddy, -1, 1))
       if (ddx !== 0) setDx((v) => clamp(v + ddx, -1, 1))
       if (ddy === 0 && ddx === 0) {
@@ -554,6 +593,20 @@ export default function VakjePerVakje() {
   const midden = useMemo(() => (model ? keuzes(model, 0, 0) : new Int8Array(0)), [model])
   const nu = useMemo(() => (model ? keuzes(model, dy, dx) : new Int8Array(0)), [model, dy, dx])
   const teller = useMemo(() => (model ? tel(model, nu, midden) : null), [model, nu, midden])
+
+  /* Zakt het aantal juiste bij ELKE stand die de knoppen kunnen bereiken? Dit
+     is de bewering onder de teller, en het bord rekent ze zelf na in plaats van
+     ze te geloven - zie het blok bij `tellerRegel`. Eén keer per modelbestand:
+     acht standen x 120 beeldjes, en `totalen()` slaat de lege pixels over. Dat
+     is nagemeten op dit bestand en het kost 9 ms, tegen de 2,5 seconde die de
+     optelling erna in beeld staat. */
+  const zaktOveral = useMemo(() => {
+    if (!model) return false
+    const inHetMidden = tel(model, midden, midden).juist
+    return VERSCHUIVINGEN.every(
+      ([ddy, ddx]) => tel(model, keuzes(model, ddy, ddx), midden).juist < inHetMidden,
+    )
+  }, [model, midden])
 
   const stand = standInWoorden(dy, dx)
   const klaar = rijtje >= ZIJDE
@@ -660,17 +713,47 @@ export default function VakjePerVakje() {
    * teller die bij aankomst op nul staat en niet zegt waarvan, leest als een
    * teller die niet werkt.
    *
-   * Nu heeft de regel twee toestanden en in geen van beide staat een nul. Is er
-   * niets verschoven, dan staat er wat je moet doen om de teller te laten
-   * bewegen. Is er wel verschoven, dan staat er waar het getal een verschil met
-   * IS, met zoveel woorden. Gemeten op het bestand: over de acht verschuivingen
-   * is de kleinste waarde 14 en de grootste 36, dus de tweede toestand kan
-   * nooit nul zijn.
+   * De verschoven toestand is daarmee in orde: er staat waar het getal een
+   * verschil MET is, met zoveel woorden, en gemeten op het bestand is de
+   * kleinste waarde 14 en de grootste 36, dus daar staat nooit een nul.
+   *
+   * DE ANDERE TOESTAND ZEI NOG NIETS, en dat is wat hier gerepareerd is. Er
+   * stond "Verschuif en kijk wat er verandert.": dat is een opdracht en geen
+   * bewering. Ze zegt niet wat je te weten komt, dus ze zegt ook niet waarom je
+   * zou duwen. Niels, op dit paneel: "Too much interpretation here too. What
+   * does stand do? What is the point?"
+   *
+   * Nu staat er de uitkomst zelf, en die is NAGEREKEND op
+   * public/les4-pixelmodel.json met dezelfde TypeScript als het bord - niet in
+   * de tekst getypt. Juist van de 120, per stand:
+   *
+   *   in het midden          111
+   *   1 pixel omhoog         103      omhoog en links         87
+   *   1 pixel omlaag         100      omhoog en rechts        97
+   *   1 pixel links          103      omlaag en links         94
+   *   1 pixel rechts         102      omlaag en rechts        86
+   *
+   * Alle acht de standen die de knoppen kunnen bereiken staan dus LAGER dan het
+   * midden, met de kleinste daling op 8 beeldjes. Daarom mag er "elke richting"
+   * staan. `zaktOveral` rekent dat bij het laden zelf na en de zin hangt eraan:
+   * komt er ooit een ander modelbestand naast dit bord, dan zwakt de zin af in
+   * plaats van te liegen.
+   *
+   * Waarom de daling en niet één anekdote: één beeldje kantelt bij ongeveer 4%
+   * per richting, dus "verschuif en je krijgt een ander cijfer" is voor bijna
+   * elk beeldje onwaar. De daling over 120 beeldjes is de bewering die wel
+   * altijd klopt - zie ook de eerlijkheidszin onderaan dit paneel.
+   *
+   * Beide regels blijven onder de 222 px inhoud van dit paneel: 194,1 px voor
+   * "Elke richting laat dit getal zakken." en 220,1 px voor de afgezwakte
+   * variant, tegen 198,8 px voor de verschoven regel die er al stond.
    * ---------------------------------------------------------------- */
   const tellerRegel = !teller
     ? undefined
     : dy === 0 && dx === 0
-      ? 'Verschuif en kijk wat er verandert.'
+      ? zaktOveral
+        ? 'Elke richting laat dit getal zakken.'
+        : 'Niet elke richting laat dit getal zakken.'
       : `Ander cijfer dan in het midden: ${getal(teller.anders)}.`
 
   return (
@@ -771,14 +854,22 @@ export default function VakjePerVakje() {
         brosheid de afloop is en niet het bord. De orde is nu het verhaal:
 
           1  de optelling   het handvat, de knop, en waar je naartoe sleept
-          2  de stand       de vier richtingen en terug naar het midden
-          3  de teller      wat die stand met 120 beeldjes doet
+          2  verschuiven    waarom, en dan de vier richtingen
+          3  de teller      de stand, en wat die stand met 120 beeldjes doet
           4  het onderwerp  een ander beeldje
 
         De teller staat daarmee ONDER de knoppen die hem laten bewegen, en zijn
-        eigen regel zegt in de openingstoestand wat je moet doen om dat te
-        zien. Hij blijft in het vaste deel van het paneel, dus hij valt op geen
-        enkel formaat onder de vouw.
+        eigen regel zegt in de openingstoestand wat er met dat getal gebeurt
+        als je duwt. Hij blijft in het vaste deel van het paneel, dus hij valt
+        op geen enkel formaat onder de vouw.
+
+        SET 2 EN SET 3 HADDEN ELK EEN KOPJE OVER DE STAND, en dat is er nu één.
+        "Stand - in het midden" boven de knoppen en "Juist bij deze stand"
+        eronder zeiden hetzelfde ding twee keer, en geen van beide zei waarom je
+        op een richting zou duwen. Het kopje boven de knoppen is nu de reden en
+        de stand is het kopje van de teller geworden. Het paneel is daar niet
+        van gegroeid: de geschrapte kopregel en de nieuwe regel meten allebei
+        17,9 px.
 
         De hoogte is begrensd zoals op de andere borden, zodat de Brief
         bovenaan altijd vrij blijft. Alleen de uitleg onderin scrollt: de kop,
@@ -889,13 +980,33 @@ export default function VakjePerVakje() {
             {model ? handvatRegel : ''}
           </p>
 
-          {/* SET 2: de stand. "Stand" en niet "Verschoven": in de begintoestand
-              las dat als "Verschoven: in het midden", en dat spreekt zichzelf
-              tegen. Alle andere kopjes op de borden zijn korte zelfstandige
-              naamwoorden, een voltooid deelwoord niet. */}
-          <div className="mt-3.5">
-            <Groep label="Stand">{stand}</Groep>
-          </div>
+          {/* SET 2: verschuiven.
+
+              HIER STOND EEN KOPJE "STAND" MET DE STAND ERNAAST, en het schrappen
+              daarvan is de reparatie van dit blok. "Stand - in het midden" noemt
+              de TOESTAND van deze vier knoppen en nooit hun NUT, en het kopje van
+              de teller eronder zei met "Juist bij deze stand" hetzelfde nog een
+              keer. Twee kopjes over één ding, en samen zeiden ze niet waarom je
+              op een richting zou duwen. Nu is het één kopje: de stand staat op de
+              teller die hij verklaart, en hier staat de reden.
+
+              Die reden is de uitleg van het algoritme zelf, in de woorden die dit
+              bord al gebruikt: `inkt` staat in de Note onderaan dit paneel en op
+              het bord, `getallen` in de eerste regel van de Brief en onder het
+              beeldje. Het model gaf elke PIXEL een getal, dus die getallen liggen
+              vast en de inkt niet - schuift ze op, dan telt het model andere
+              getallen op. Dat is precies wat de vier knoppen doen.
+
+              Eén regel, en dat is een maat: 200,3 px met de letter van dit paneel,
+              tegen 222 px inhoud bij 1024x768 en 900x700. Twee regels kosten
+              17,9 px en die zijn er niet - het is exact de hoogte die het
+              geschrapte kopje vrijmaakte, dus dit blok is even hoog als vroeger.
+              "Het beeldje verschuift, de getallen niet." meet 225,9 px en past
+              dus niet; `inkt` is hier bovendien het scherpere woord, want het is
+              de inkt die op andere getallen komt te liggen. */}
+          <p className="mt-3.5 text-[13px] leading-snug text-ink/80">
+            De inkt verschuift, de getallen niet.
+          </p>
 
           {/* Vier richtingen, één set, één vorm op elk formaat. Elke knop die
               niets meer kan doen, staat uit: een knop die je kan indrukken en
@@ -934,24 +1045,43 @@ export default function VakjePerVakje() {
               doen: eerst het mechanisme, dan de stand, dan wat die stand met
               120 beeldjes doet.
 
-              Het label zegt nu waarover het getal gaat. "Juist" alleen liet
-              open bij welke stand die 111 hoorde, en dat is de helft van de
-              vraag die dit paneel kreeg; de andere helft was de regel eronder,
-              die "Ander antwoord: 0." zei zonder te zeggen ander dan wat.
+              HET LABEL IS DE STAND ZELF, en dat is het samengevoegde kopje.
+              Er stond "Juist bij deze stand", met daarboven een tweede kopje
+              "Stand - in het midden": twee kopjes over één ding, en "deze
+              stand" wees naar het andere. Nu staat de stand hier, in de letter
+              waarin een kopje op deze borden staat, vlak boven het getal dat
+              erbij hoort - dus "in het midden - 111 van de 120 beeldjes juist",
+              en na één klik "1 pixel omhoog - 103 van de 120 beeldjes juist".
+              Het woord `juist` verhuisde daarvoor naar het slot van de regel
+              onder het getal, waar het de teller nog altijd benoemt.
+
+              Twee maten, allebei nagemeten met de letter van dit paneel. Het
+              kopje: de langste stand is "1 PIXEL OMHOOG EN RECHTS" op 182,5 px
+              tegen 222 px inhoud, dus één regel in alle negen de standen - zie
+              `standInWoorden`, waar het woord "naar" om deze reden weg is. De
+              getalregel: 54,9 px voor het getal plus 6 px tussenruimte plus
+              149,3 px voor "van de 120 beeldjes juist" is 210,2 px, dus ook één
+              regel. `tabular-nums` houdt dat getal even breed van 86 tot 111,
+              zodat er niets opschuift bij een klik.
 
               Vaste hoogte van één detailregel, zodat "Ander beeldje" eronder
-              niet opschuift als de regel van vorm wisselt. Beide varianten van
-              `tellerRegel` zijn daarvoor onder de 40 tekens gehouden.
+              niet opschuift als de regel van vorm wisselt. Alle varianten van
+              `tellerRegel` blijven daarvoor onder de 222 px.
 
               12 px erboven en niet de 14 van de ladder: de teller is de afloop
               van de vier knoppen erboven en geen nieuwe set. Die 2 px plus de 2
               onder het handvat zijn wat de eerlijkheidszin bij 1280x720 nodig
               heeft om helemaal te passen. */}
-          <div className="mt-3 min-h-[4.4rem]">
+          {/* De bovenmarge staat HIER en niet op Vaststelling zelf: dat component gebruikt
+              `first:mt-0`, en `first:` kijkt naar de eerste child van zijn OUDER, niet naar
+              het paneel. Omdat dit blok in dit omhulsel zit, was het altijd "eerste" en kreeg
+              het 0 px - precies het gebrek dat Niels op het les 3-bord aanwees, hier opnieuw.
+              Het omhulsel blijft nodig voor de min-h die de hoogte reserveert. */}
+          <div className="mt-5 min-h-[4.4rem]">
             <Vaststelling
-              label="Juist bij deze stand"
+              label={stand}
               value={teller ? teller.juist : null}
-              outOf={teller ? { total: teller.totaal, noun: 'beeldjes' } : undefined}
+              outOf={teller ? { total: teller.totaal, noun: 'beeldjes juist' } : undefined}
               detail={tellerRegel}
               empty="Het model wordt geladen."
               color={NAVY}
@@ -962,13 +1092,13 @@ export default function VakjePerVakje() {
               het staat 14 px lager, in zijn eigen groep met de teller ernaast.
 
               De verschuiving blijft staan als je een ander beeldje neemt: dat
-              is één stand voor het hele bord, en ze staat in woorden boven de
-              knoppen. Ze stil terugzetten zou de klik van de leerling ongedaan
-              maken zonder dat hij het ziet. Het gekozen cijfer gaat WEL terug
-              naar het echte cijfer van het nieuwe beeldje: het cijfer van het
-              vorige beeldje zou hier een toestand zijn die nergens meer bij
-              hoort. En de balkas wordt hier opnieuw gerekend - dit is het
-              enige moment waarop dat eerlijk is.
+              is één stand voor het hele bord, en ze staat in woorden op het
+              kopje van de teller. Ze stil terugzetten zou de klik van de
+              leerling ongedaan maken zonder dat hij het ziet. Het gekozen
+              cijfer gaat WEL terug naar het echte cijfer van het nieuwe
+              beeldje: het cijfer van het vorige beeldje zou hier een toestand
+              zijn die nergens meer bij hoort. En de balkas wordt hier opnieuw
+              gerekend - dit is het enige moment waarop dat eerlijk is.
 
               En het nieuwe beeldje wordt OPNIEUW OPGETELD, met `startNarratie`
               in plaats van `setRijtje(ZIJDE)`. Een ander beeldje is een ander

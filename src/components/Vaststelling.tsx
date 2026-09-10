@@ -98,7 +98,17 @@ export default function Vaststelling({
   const staat = leeg ? '-' : getal(value, decimals)
 
   return (
-    <div>
+    /* HET KOPJE HEEFT LUCHT BOVEN ZICH NODIG, en die stond hier niet: dit component
+       had geen eigen marge, dus de afstand was per bord toevallig wat er boven
+       stond. Gemeten over alle acht de borden liep die van 0 tot 23 px, en op
+       /les3/van-getal-naar-kans plakte "ZEKERHEID" met 0 px tegen de regel erboven
+       terwijl "DE 96 RIJEN" in hetzelfde paneel 10 px had. 20 px (mt-5) is de
+       waarde die de meeste borden al hadden (21 px op data-dokter, waar-leg-jij-de-
+       grens en het regressie-lab), dus dit trekt de uitzonderingen recht in plaats
+       van iedereen te verzetten.
+       `first:mt-0` omdat dit blok op sommige borden het EERSTE in het paneel is
+       (WaarLegJijDeGrens); daar zou een marge het paneel vanboven laten uitzakken. */
+    <div className="mt-5 first:mt-0">
       <div className="text-[11.5px] font-bold uppercase tracking-[0.09em] text-ink/75">{label}</div>
 
       {/*
