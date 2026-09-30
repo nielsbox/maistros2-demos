@@ -143,7 +143,7 @@ const LESSONS: Lesson[] = [
         title: 'K-means stap voor stap',
         soort: 'mini-demo',
         doel: 'K-means herhaalt twee stappen tot er niks meer verandert',
-        doen: 'Kies 2 punten als centroids en zet de twee stappen zelf, tot geen enkel punt nog van kleur verandert.',
+        doen: 'Kies hoeveel clusters je wil, van 2 tot 5. Klik op evenveel punten, of druk op Kies willekeurig. Dat worden de centroids. Druk dan zelf om beurten op knop 1 en knop 2, tot geen enkel punt nog van kleur verandert.',
       },
     ],
   },
