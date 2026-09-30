@@ -101,7 +101,9 @@ import {
  * misklik op de gekozen knop geen run wist.
  *   "Kies willekeurig" heeft per aantal een eigen seeded() reeks: de eerste
  * keer bij 4 clusters geeft op elke beamer dezelfde punten, wat je daarvoor
- * bij 2 of 3 ook deed. 2 houdt de seed die het bord altijd had.
+ * bij 2 of 3 ook deed. 2 houdt de seed die het bord altijd had. De seeds
+ * liggen ver uit elkaar, en dat is gemeten nodig (zie `reeksVoor`): met seeds
+ * naast elkaar begon de blauwe centroid bij elk aantal op punt 8.
  *   Het bord zegt nergens "k-means maakt altijd precies zoveel clusters als jij
  * vraagt". Aan het einde klopt dat voor elke start, maar onderweg raakt er één
  * keer een cluster leeg (1 van de 8 568 starts met 5, zie kmeans.ts). In die
@@ -119,6 +121,15 @@ import {
  * 13281 en 13282 voor precies dit effect. Elk getal komt uit `uitkomsten`,
  * niet uit de tekst. Het is ook waarom de plaatjes van Stap 6 bij elke
  * leerling anders zijn: KMeans kiest zijn start willekeurig, net zoals hier.
+ *   De betaling gaat over de START en is GEEN maat voor het aantal. Daarom
+ * staat de vraag "welk aantal past het best?" ERNA, als laatste zin van het
+ * paneel, met erbij hoe je oordeelt: "Kijk zelf". Stond de vraag erboven
+ * (review 2026-09-30), dan was het getal eronder het enige dat verandert als
+ * je een ander aantal kiest, en las een leerling "Alle 153" tegen "maar 2" als
+ * het antwoord: stabiliteit in plaats van hoe goed de groepen bij de punten
+ * passen, en dat eerste criterium gebruikt de les nergens. Om dezelfde reden
+ * eindigt de betaling niet meer op "Druk op Opnieuw en kies andere punten":
+ * het paneel geeft na de run één opdracht, een ander aantal proberen.
  *
  * DE ANNOTATIES. Er is precies EEN tekstplek op het bord, de band boven de
  * punten, en die zegt per toestand hoogstens één zin. Verder staan er alleen
@@ -163,6 +174,19 @@ const AANTALLEN: readonly Aantal[] = [2, 3, 4, 5]
  *   Tegen navy, de kleur van "nog geen cluster", haalt elke tint minstens
  * dE 35,3 bij gewoon zicht en 22,6 onder protanopie (rood). Geen cluster kan
  * dus doorgaan voor "zwart".
+ *   Groen en rood staan samen in deze set, en dat mag hier: DERDE tegen
+ * VIERDE geeft dE 11,1 onder deuteranopie en 29,9 bij gewoon zicht, PASS.
+ * CLAUDE.md zegt dat elk paar rood en groen zakt "however you step it". Voor
+ * deze twee tinten klopt dat niet (gemeten 2026-09-30). Draai de validator
+ * opnieuw in plaats van een van beide zinnen te geloven.
+ *
+ * EEN CENTROID OP EEN PUNT lijkt wat op het teken ©: een gekleurde rand, een
+ * vol punt erin en de C erop. Dat staat er bij elke gekozen centroid, en bij
+ * elke cluster van één punt (vaker bij 4 en 5). Bewust zo gelaten. Een witte
+ * schijf achter de C verbergt het punt, en een verborgen punt deed de teller
+ * al eens liegen ("18 van de 18" met 16 zichtbare kleuren, zie 2b hieronder).
+ * Het gekozen punt al in de clusterkleur zetten maakt "Alle punten waren
+ * zwart" vals. De C blijft leesbaar, dus de vorm blijft.
  *
  * Oranje betekent hier "de oranje cluster" en niet "fout", en rood "de rode
  * cluster": er staat op dit bord geen enkele misser.                       */
@@ -546,8 +570,30 @@ function Kiezer({ aantal, onKies }: { aantal: Aantal; onKies: (k: Aantal) => voi
 /* ------------------------------- het bord --------------------------- */
 
 /** De seed van "Kies willekeurig" bij 2 clusters. Elk aantal heeft zijn eigen
- *  reeks (zie `toeval`), en 2 houdt de seed die het bord altijd had. */
+ *  reeks (zie `reeksVoor`), en 2 houdt de seed die het bord altijd had. */
 const SEED = 20260930
+
+/**
+ * De reeks van "Kies willekeurig" voor een aantal clusters.
+ *
+ * NIET gewoon SEED + aantal - 2, en dat is gemeten. seeded() is een LCG, en
+ * zijn EERSTE getal hangt lineair af van de seed: vier seeds naast elkaar
+ * gaven 0,4087, 0,4091, 0,4094 en 0,4098, dus bij elk aantal punt 8 als
+ * eerste (blauwe) centroid. Juist wie "Probeer 2, 3, 4 en 5" volgt, zag blauw
+ * dan vier keer op hetzelfde punt beginnen. Nu liggen de seeds 7 919 uit
+ * elkaar en valt het eerste getal vanaf 3 weg. De eerste druk per aantal:
+ *   2: punt 8, 17               (zoals altijd: seed en reeks ongewijzigd)
+ *   3: punt 4, 8, 15
+ *   4: punt 9, 11, 17, 2
+ *   5: punt 14, 15, 2, 10, 12
+ * Het blauwe punt staat dan op x 508, 292, 656 en 860: vier plaatsen.
+ */
+function reeksVoor(aantal: Aantal): () => number {
+  if (aantal === 2) return seeded(SEED)
+  const r = seeded(SEED + (aantal - 2) * 7919)
+  r()
+  return r
+}
 
 export default function KMeansStappen() {
   const [aantal, setAantal] = useState<Aantal>(2)
@@ -605,6 +651,40 @@ export default function KMeansStappen() {
     }
   }, [anim])
   const bezig = anim !== null
+
+  /* DE FOCUS VOLGT DE VOLGENDE ZET, voor wie met het toetsenbord werkt. Bij
+     elke zet verdwijnt of dooft wat de focus had: een gekozen punt is geen
+     knop meer zodra het laatste punt gekozen is, knop 1 staat uit na knop 1,
+     en na de laatste knop 1 zijn beide knoppen weg. Gemeten (audit
+     2026-09-30): na het vijfde punt met Enter stond de focus op <body>, en
+     moest je van bovenaan de pagina opnieuw naar knop 1 tabben. Dus: is de
+     focus kwijt, dan gaat ze naar de ene knop die nu aan staat, en na het
+     einde naar het gekozen aantal in de kiezer, want dat is de opdracht. Wie
+     ergens anders staat, wordt niet verplaatst. Gemeten met Enter door een
+     hele run met 5 clusters: vijfde punt -> knop 1 -> knop 2 -> knop 1 ... ->
+     de 5 in de kiezer. Alleen terwijl de centroids schuiven (700 ms) staan
+     beide knoppen uit en is de focus even weg; daarna staat ze op knop 1. Met
+     de muis verschijnt er geen focusring (:focus-visible blijft uit). */
+  const wortel = useRef<HTMLDivElement>(null)
+  const knoppen = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const nu = document.activeElement
+    const kwijt =
+      !nu ||
+      nu === document.body ||
+      !nu.isConnected ||
+      (nu instanceof HTMLButtonElement && nu.disabled)
+    if (!kwijt) return
+    const doel =
+      fase === 'stap1' && !bezig
+        ? knoppen.current?.querySelectorAll('button')[0]
+        : fase === 'stap2'
+          ? knoppen.current?.querySelectorAll('button')[1]
+          : fase === 'klaar'
+            ? wortel.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')
+            : null
+    doel?.focus({ preventScroll: true })
+  }, [fase, bezig])
 
   /** Elke leerling en elke beamer krijgt dezelfde "willekeurige" reeks, en
    *  dat per aantal: de eerste keer "Kies willekeurig" bij 4 clusters geeft
@@ -699,7 +779,7 @@ export default function KMeansStappen() {
     if (fase !== 'kiezen') return
     let r = toeval.current.get(aantal)
     if (!r) {
-      r = seeded(SEED + aantal - 2)
+      r = reeksVoor(aantal)
       toeval.current.set(aantal, r)
     }
     zetStart(willekeurigeStart(aantal, r))
@@ -752,8 +832,11 @@ export default function KMeansStappen() {
       : fase === 'stap1' && clusters === null
         ? 'De centroids staan klaar. Druk op knop 1: elk punt kiest de dichtste centroid.'
         : fase === 'stap2'
-          ? legeCluster
-            ? 'Druk op knop 2: elke centroid schuift naar het gemiddelde van zijn punten. Eén centroid heeft geen punten meer. Die blijft staan.'
+          ? /* Met een lege cluster eerst de uitzondering, dan de opdracht:
+               "elke centroid schuift" en daarna "die blijft staan" sprak
+               zichzelf tegen. */
+            legeCluster
+            ? 'Eén centroid heeft geen punten meer. Die blijft staan. Druk op knop 2: de andere schuiven naar het gemiddelde van hun punten.'
             : 'Druk op knop 2: elke centroid schuift naar het gemiddelde van zijn punten.'
           : fase === 'stap1'
             ? /* NIET "de centroids zijn verschoven": gemeten over alle starts
@@ -761,9 +844,14 @@ export default function KMeansStappen() {
                  gemiddelde van zijn punten stond. Bij 3 clusters in 606 van de
                  1 796 keer knop 2, bij 4 in 3 268 van de 6 417, bij 5 in
                  11 399 van de 17 703, en bij 2 één keer. Wat altijd klopt, is
-                 waar ze nu staan. */
+                 waar ze nu staan.
+                   Met een lege cluster valt de vraag "Kiest elk punt nog altijd
+                 dezelfde centroid?" weg. Die toestand komt pas na de tweede
+                 knop 2, dus de leerling las de vraag in deze run al. Met de
+                 vraag erbij was dit de hoogste toestand van het paneel (490 px
+                 op 900x700), en een open uitleg raakte het paneel dan net. */
               legeCluster
-              ? 'De centroid zonder punten bleef staan. De andere staan nu op het gemiddelde van hun punten. Kiest elk punt nog altijd dezelfde centroid? Druk op knop 1.'
+              ? 'De centroid zonder punten bleef staan. De andere staan nu op het gemiddelde van hun punten. Druk op knop 1.'
               : 'Elke centroid staat nu op het gemiddelde van zijn punten. Kiest elk punt nog altijd dezelfde centroid? Druk op knop 1.'
             : null
 
@@ -784,7 +872,7 @@ export default function KMeansStappen() {
   const eenUitkomst = alle !== null && alle.telling.size === 1
 
   return (
-    <div className="relative h-full w-full">
+    <div ref={wortel} className="relative h-full w-full">
       {/* Geen astekst: de voorbeelden op de slides hebben geen assen, en de
           plaats van een punt is hier geen waarde die je moet aflezen. */}
       <Canvas defaultView={VENSTER} axes={false}>
@@ -808,13 +896,17 @@ export default function KMeansStappen() {
           staat geen opdracht: wat je doet staat in het paneel eronder, dat
           nooit inklapt, en in de band op het bord. De harde spatie in de titel
           houdt "voor stap" bij elkaar: op 1024x768 brak hij als "K-means stap
-          voor / stap", met één los woord op de tweede regel. */}
-      <Brief eyebrow="mAIstros 2 - les 7" title={'K-means stap voor stap'}>
+          voor / stap", met één los woord op de tweede regel. Ze staat er als
+          escape en niet als los teken, zoals in Vaststelling.tsx: een los
+          teken is in dit project al eens stil een gewone spatie geworden.
+            De tweede alinea zei eerst ook "Jij kiest in hoeveel clusters
+          k-means ze opdeelt". Vanaf 1280 px stond dat dan twee keer op het
+          scherm, want het paneel zegt het ook, en op 900x700 maakte die regel
+          de open uitleg 46 px langer (onderkant 238 in plaats van 192), zodat
+          het paneel erover schoof. Het paneel is de ene plek waar het staat. */}
+      <Brief eyebrow="mAIstros 2 - les 7" title={'K-means stap voor\u00a0stap'}>
         <p>K-means herhaalt twee stappen tot er niks meer verandert.</p>
-        <p>
-          Dit zijn de {getal(PUNTEN.length)} punten van de slides. Jij kiest in hoeveel clusters
-          k-means ze opdeelt.
-        </p>
+        <p>Dit zijn de {getal(PUNTEN.length)} punten van de slides.</p>
       </Brief>
 
       {/* Het paneel staat er van de eerste tel af en verandert nooit van
@@ -823,7 +915,9 @@ export default function KMeansStappen() {
 
           DE VOLGORDE IS VAST en volgt het algoritme: eerst het aantal clusters,
           dan wat je nu doet, dan de twee knoppen van het algoritme, dan de
-          teller, en onderaan de knoppen voor de start.
+          teller, en onderaan de knoppen voor de start. Na het einde staat op
+          de plaats van "wat je nu doet" de betaling, met de vraag over het
+          aantal als laatste zin (zie DE BETALING bovenaan).
 
           WAT ER STAAT HANGT AF VAN DE FASE, en dat is gemeten. Met de kiezer
           erbij scrolde het paneel op 900x700 in ELKE toestand (535 tot 592 px
@@ -831,53 +925,72 @@ export default function KMeansStappen() {
           clusters. Wat er nu wegvalt, heeft in die fase geen werk:
             - de twee knoppen van het algoritme staan er alleen tijdens de run.
               Bij het kiezen en na het einde staan ze allebei uit.
-            - de zin onder de kiezer staat er alleen als je het aantal kiest:
-              bij het kiezen, en na het einde als vraag. Midden in een run
-              heeft hij zijn werk gedaan.
+            - de zin onder de kiezer staat er alleen bij het kiezen. Midden in
+              een run heeft hij zijn werk gedaan, en na het einde staat de
+              vraag over het aantal onder de betaling.
             - "Start zoals op de slides" staat er alleen bij het kiezen en na
               het einde: dat zijn de twee momenten waarop je een start kiest.
               Midden in een run is "Opnieuw" de uitweg.
           Zo wisselen de knoppen van het algoritme en de betaling elkaar af, en
           blijft het paneel ongeveer even hoog. Gemeten op 900x700, waar het
-          paneel 506 px heeft: kiezen 395-414, tijdens de run 453-472, na het
-          einde 415-452, en 490 in de ene toestand met een lege cluster. Op
-          1024x768 dezelfde getallen (574 px vrij), op 1280 en 1440 336-418.
-          Geen enkel paneel scrolt, bij geen enkel aantal. */}
+          paneel 506 px heeft: kiezen 395-414, tijdens de run 453-472 (ook in
+          de toestanden met een lege cluster), na het einde 433-452. Op
+          1024x768 dezelfde getallen (574 px vrij), op 1280 en 1440 336-417.
+          Geen enkel paneel scrolt, bij geen enkel aantal.
+            DE OPEN UITLEG. Onder 1280 px staat de uitleg linksboven dicht, en
+          kan de leerling hem met + openen. Dan reikt hij op 900x700 tot 192 px,
+          en het paneel begint nooit hoger dan 210 px: 18 px lucht, in elke
+          toestand. Voor deze ronde schoof het paneel er tot 46 px over (op main
+          24 px), en verborg het de tweede zin van de uitleg. Dat is opgelost
+          met twee kortere teksten, niet met een lagere max-h: een lager
+          paneel zou in de hoogste toestanden weer scrollen. */}
       <Panel className="pointer-events-auto absolute bottom-4 left-4 z-10 flex max-h-[calc(100%-12rem)] w-[16rem] flex-col overflow-y-auto px-4 py-3.5 xl:max-h-[calc(100%-15rem)] xl:w-[21rem]">
         {/* HET AANTAL KIES JIJ. De zin eronder is de reden dat de kiezer er
-            is, en na een volle run wordt hij de vraag die de leerling zelf
-            beantwoordt. Het bord rekent geen beste aantal uit: de les oordeelt
-            door te kijken (2129261). */}
+            is. "Beslist" en niet "kiest": op dit bord kiest elk punt de
+            dichtste centroid, en kiest de leerling punten en een aantal. Een
+            derde die "kiest" is een woord voor twee dingen. Het bord rekent
+            geen beste aantal uit: de les oordeelt door te kijken (2129261). */}
         <Kiezer aantal={aantal} onKies={kiesAantal} />
-        {(fase === 'kiezen' || fase === 'klaar') && (
+        {fase === 'kiezen' && (
           <p className="mt-2 text-[13.5px] leading-snug text-ink">
-            {fase === 'klaar'
-              ? 'Probeer 2, 3, 4 en 5. Welk aantal past het best bij de punten?'
-              : 'K-means kiest niet hoeveel clusters er komen. Dat kies jij.'}
+            K-means beslist niet hoeveel clusters er zijn. Dat kies jij.
           </p>
         )}
 
         {stand && <p className="mt-3 text-[13.5px] leading-snug text-ink">{stand}</p>}
         {/* DE BETALING, zodra het algoritme stopt: dan is dit wat de leerling
             nu moet lezen. Elk getal komt uit `uitkomsten`, en de derde zin
-            volgt uit die telling, niet uit deze tekst. */}
+            volgt uit die telling, niet uit deze tekst.
+              De vraag over het aantal staat ERNA, als laatste zin, en noemt
+            hoe je oordeelt: kijken. Stond de vraag erboven, dan was het getal
+            eronder het enige dat verandert als je een ander aantal kiest (bij 2
+            "Alle 153", bij 5 soms "maar 2"), en las een leerling dat getal als
+            het antwoord. Dat getal zegt iets over de START, niet over welk
+            aantal het best past. Daarom ook geen "Druk op Opnieuw" meer in de
+            betaling: dan eindigde het paneel op twee opdrachten die elkaar
+            tegenspraken, een ander aantal en hetzelfde aantal opnieuw. */}
         {alle && clusters && (
-          <p className="mt-3 text-[13.5px] leading-snug text-ink">
-            Er zijn {getal(alle.starts)} manieren om {getal(aantal)} punten als centroids te
-            kiezen.{' '}
-            {dezeUitkomst === alle.starts
-              ? `Alle ${getal(dezeUitkomst)} komen bij deze clusters uit.`
-              : `Daarvan ${meervoud(dezeUitkomst, 'komt', 'komen')} er maar ${getal(dezeUitkomst)} bij deze clusters uit.`}{' '}
-            {eenUitkomst
-              ? 'De start maakt hier dus niet uit.'
-              : 'De uitkomst hangt dus af van waar je start. Dat is geen fout. Druk op Opnieuw en kies andere punten.'}
-          </p>
+          <>
+            <p className="mt-3 text-[13.5px] leading-snug text-ink">
+              Er zijn {getal(alle.starts)} manieren om {getal(aantal)} punten als centroids te
+              kiezen.{' '}
+              {dezeUitkomst === alle.starts
+                ? `Alle ${getal(dezeUitkomst)} komen bij deze clusters uit.`
+                : `Daarvan ${meervoud(dezeUitkomst, 'komt', 'komen')} er maar ${getal(dezeUitkomst)} bij deze clusters uit.`}{' '}
+              {eenUitkomst
+                ? 'De start maakt hier dus niet uit.'
+                : 'De uitkomst hangt dus af van waar je start. Dat is geen fout.'}
+            </p>
+            <p className="mt-2 text-[13.5px] leading-snug text-ink">
+              Probeer nu 2, 3, 4 en 5. Kijk zelf: welk aantal past het best bij de punten?
+            </p>
+          </>
         )}
 
         {/* De twee stappen van het algoritme, alleen tijdens de run. Alleen de
             volgende staat aan: de volgorde is wat je hier leert. */}
         {(fase === 'stap1' || fase === 'stap2') && (
-          <div className="mt-2.5 flex flex-col gap-1.5">
+          <div ref={knoppen} className="mt-2.5 flex flex-col gap-1.5">
             <Btn full disabled={fase !== 'stap1' || bezig} onClick={stap1}>
               1. Elk punt kiest de dichtste centroid
             </Btn>

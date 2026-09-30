@@ -10,10 +10,11 @@
  * GEMETEN, en exact: in breuken nagerekend (scratchpad km/sim.py) en hier in
  * floats opnieuw, met dezelfde uitkomst.
  *
- *   - Vanaf de start van de slides (punt 4 blauw, punt 7 oranje) volgt deze
- *     code alle zeven slides: eerst 5 blauw en 13 oranje, dan wisselen er 3
- *     punten van oranje naar blauw (2129259: "3 punten van de oranje cluster"),
- *     8 en 10, en daarna wisselt er geen enkel punt meer.
+ *   - Vanaf de start van de slides (punt 5 blauw, punt 8 oranje, of index 4
+ *     en 7 in PUNTEN) volgt deze code alle zeven slides: eerst 5 blauw en 13
+ *     oranje, dan wisselen er 3 punten van oranje naar blauw (2129259: "3
+ *     punten van de oranje cluster"), 8 en 10, en daarna wisselt er geen
+ *     enkel punt meer.
  *   - Met 2 clusters komen ALLE 153 manieren om 2 punten als centroid te
  *     kiezen bij dezelfde twee clusters uit (8 en 10).
  *   - Het bord laat 2, 3, 4 of 5 clusters kiezen (het bereik van Stap 6,
