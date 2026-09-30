@@ -133,7 +133,8 @@ export default function Vaststelling({
         )}
         {!leeg && outOf && (
           <span className="text-[13.5px] font-medium text-ink/80">
-            van de {getal(outOf.total)} {outOf.noun}
+            {/* "1 van de 1 boom" is stijf; bij één is het "1 van 1 boom". */}
+            {outOf.total === 1 ? 'van' : 'van de'} {getal(outOf.total)} {outOf.noun}
           </span>
         )}
       </div>
