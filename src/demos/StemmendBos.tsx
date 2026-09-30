@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import Canvas, { DragDot, type Scales } from '../components/Canvas'
 import { Brief, Btn, Divider, Panel, PyChip } from '../components/Overlay'
-import Vaststelling, { getal, meervoud } from '../components/Vaststelling'
+import Vaststelling, { NBSP, getal, meervoud } from '../components/Vaststelling'
 import {
   DAGEN,
   MAX_BOMEN,
@@ -453,7 +453,7 @@ export default function StemmendBos() {
       : aantal < 3
         ? `Maak boom ${aantal + 1}. Hij leert van een ander stuk van de train set.`
         : keuze !== 'bos'
-          ? 'Klik op het bos. Dan zie je overal op het bord wat de meeste stemmen zeggen.'
+          ? 'Klik op het bos. Dan zie je overal op het bord wat de meeste bomen zeggen.'
           : 'Sleep de nieuwe boeking. Zoek een plek waar de bomen het oneens zijn.'
 
   /* Eén regel. Het getal erboven telt de stemmen voor afgezegd; deze regel zegt
@@ -524,12 +524,12 @@ export default function StemmendBos() {
           geen opdracht achter de uitklap: wat je DOET, staat in het paneel. */}
       <Brief eyebrow="mAIstros 2 - les 6" title="Het bos stemt">
         <p>
-          Elke boom leert van een willekeurig stuk van de train set. Voor een nieuwe boeking
+          Elke boom leert van een willekeurig stuk van de train set. Bij een nieuwe boeking
           stemt elke boom, en de meeste stemmen winnen.
         </p>
         <p>Elk punt is een rij uit hotelreservaties.csv: een boeking die wel of niet is afgezegd.</p>
         <p>
-          Elk vakje kijkt ook maar naar één willekeurig kenmerk. In je notebook maakt{' '}
+          Elk vakje kijkt maar naar één kenmerk, willekeurig gekozen. In je notebook maakt{' '}
           <PyChip>RandomForestClassifier()</PyChip> 100 bomen, en die zijn veel dieper.
         </p>
       </Brief>
@@ -553,13 +553,30 @@ export default function StemmendBos() {
 
         {gekozenBoom ? (
           <div className="text-[13px] leading-snug text-ink/85">
+            {/* DE LICHTE RIJEN HEBBEN EEN NAAM EN EEN GETAL. Er stond "De andere
+                staan lichter", en Niels vroeg of je ze niet beter "de test set"
+                noemt. Niet als naam: deze zin zegt zelf dat ze uit de train set
+                komen, de les heeft haar eigen test set (70/30), en de woordenlijst
+                houdt "train set / test set" voor de twee helften van de data. Twee
+                test sets op één scherm is precies de verwarring die de lijst
+                verbiedt. Wat wel klopt: voor DEZE boom zijn het rijen die hij nooit
+                zag, en dat is hoe een random forest elke boom apart kan testen.
+                Daarom "als een test set": een vergelijking, geen naam.
+                Het getal wordt gerekend, nooit getypt. GEMETEN over de 9 bomen: 62
+                (boom 1) tot 77 rijen, dus altijd meervoud.
+                Deze zin past ALLEEN samen met de korte kop eronder. GEMETEN in de
+                langste toestand (2 bomen, gelijk, boom 1, 4 condities): de zin is
+                5 regels onder 1280 px en 3 vanaf 1280, en het paneel blijft 451 px
+                (900x700, 1024x768) en 397 px (1280 en breder), net als met de oude
+                zin. Met de oude kop "Zo stemt boom 1 over de nieuwe boeking:" brak
+                die onder 1280 px op "boeking:", en dan scrolde het paneel op
+                900x700 2 px (468 tegen 466). */}
             <p>
-              Boom {gekozenBoom.nr} trok {getal(TRAIN.length)} keer een willekeurige rij uit de train set. Zo
-              kreeg hij {getal(gekozenBoom.gezien)} verschillende rijen. De andere staan lichter.
+              Boom {gekozenBoom.nr} trok {getal(TRAIN.length)} keer een willekeurige rij uit de train set,
+              soms dezelfde. De {getal(TRAIN.length - gekozenBoom.gezien)} rijen die hij nooit trok, staan
+              lichter. Voor hem zijn ze als een test set.
             </p>
-            <p className="mt-1.5 font-semibold text-ink">
-              Zo stemt boom {gekozenBoom.nr} over de nieuwe boeking:
-            </p>
+            <p className="mt-1.5 font-semibold text-ink">Zo stemt boom {gekozenBoom.nr}:</p>
             <ol className="mt-0.5 space-y-0.5">
               {woorden.map((w, i) => (
                 <li key={i} className="flex justify-between gap-2 tabular-nums">
@@ -676,7 +693,10 @@ export default function StemmendBos() {
                   onClick={maak}
                   className="flex min-h-[5.6rem] items-center justify-center rounded-lg bg-lime px-2 text-center text-[13px] font-extrabold uppercase leading-tight text-navy transition hover:bg-lime-deep"
                 >
-                  Maak boom {nr}
+                  {/* Harde spatie: onder 1280 px is de tegel 96 px breed, en dan
+                      stond het getal GEMETEN alleen op de tweede regel ("MAAK
+                      BOOM" / "2"). Nu breekt het als "MAAK" / "BOOM 2". */}
+                  Maak boom{NBSP}{nr}
                 </button>
               )
             }
@@ -691,9 +711,12 @@ export default function StemmendBos() {
           })}
         </div>
 
+        {/* Een werkwoord, net als de tegel "Maak boom N", en het nummer van de
+            tegel die verdwijnt. Was "Laatste boom weg". Eén regel op elke maat
+            (gemeten 900 tot 1440 px). */}
         <div className="mt-2">
           <Btn variant="ghost" full disabled={aantal <= 1} onClick={haalWeg}>
-            Laatste boom weg
+            Haal boom {aantal} weg
           </Btn>
         </div>
       </Panel>
