@@ -120,6 +120,34 @@ const LESSONS: Lesson[] = [
     ],
   },
   {
+    les: 'Les 6',
+    titel: 'Random forests',
+    tint: 'var(--color-peri)',
+    demos: [
+      {
+        to: '/les6/het-bos-stemt',
+        title: 'Het bos stemt',
+        soort: 'mini-demo',
+        doel: 'Elke boom stemt, de meeste stemmen winnen',
+        doen: 'Maak één boom per keer. Elke boom leert van een willekeurig stuk van de train set. Sleep de nieuwe boeking en kijk wat elke boom stemt.',
+      },
+    ],
+  },
+  {
+    les: 'Les 7',
+    titel: 'Clustering met k-means',
+    tint: 'var(--color-mint)',
+    demos: [
+      {
+        to: '/les7/k-means-stap-voor-stap',
+        title: 'K-means stap voor stap',
+        soort: 'mini-demo',
+        doel: 'K-means herhaalt twee stappen tot er niks meer verandert',
+        doen: 'Kies 2 punten als centroids en zet de twee stappen zelf, tot geen enkel punt nog van kleur verandert.',
+      },
+    ],
+  },
+  {
     les: 'Les 12',
     titel: 'Q-learning',
     tint: 'var(--color-sky)',
