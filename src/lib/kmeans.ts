@@ -10,27 +10,53 @@
  * GEMETEN, en exact: in breuken nagerekend (scratchpad km/sim.py) en hier in
  * floats opnieuw, met dezelfde uitkomst.
  *
- *   - Vanaf de start van de slides (punt 4 blauw, punt 7 oranje) volgt deze
- *     code alle zeven slides: eerst 5 blauw en 13 oranje, dan wisselen er 3
- *     punten van oranje naar blauw (2129259: "3 punten van de oranje cluster"),
- *     8 en 10, en daarna wisselt er geen enkel punt meer.
+ *   - Vanaf de start van de slides (punt 5 blauw, punt 8 oranje, of index 4
+ *     en 7 in PUNTEN) volgt deze code alle zeven slides: eerst 5 blauw en 13
+ *     oranje, dan wisselen er 3 punten van oranje naar blauw (2129259: "3
+ *     punten van de oranje cluster"), 8 en 10, en daarna wisselt er geen
+ *     enkel punt meer.
  *   - Met 2 clusters komen ALLE 153 manieren om 2 punten als centroid te
- *     kiezen bij dezelfde twee clusters uit (8 en 10), nooit met een lege
- *     cluster.
- *   - Met 3 clusters geven de 816 manieren 39 verschillende uitkomsten, en de
- *     vaakste komt maar 109 keer voor.
+ *     kiezen bij dezelfde twee clusters uit (8 en 10).
+ *   - Het bord laat 2, 3, 4 of 5 clusters kiezen (het bereik van Stap 6,
+ *     2129379). Over ALLE starts, elk met deze code tot het einde gedraaid
+ *     (gemeten 2026-09-30 met de functies hieronder, twee keer, met twee
+ *     aparte scripts die dezelfde tabel gaven):
+ *
+ *       clusters  starts  uitkomsten  vaakste  wissels stijgen  knop 1 hoogstens
+ *          2        153        1         153        26               6 keer
+ *          3        816       39         109        11               7 keer
+ *          4      3 060      251         243        47               8 keer
+ *          5      8 568      748         398       146               9 keer
+ *
+ *     "knop 1 hoogstens" telt de laatste druk mee, die met 0 wissels. Elke
+ *     start stopt: geen enkele haalt de grens van 100 rondes.
+ *   - EEN LEGE CLUSTER, gemeten omdat het bord dat zinnetje anders niet mag
+ *     zeggen. Na de eerste keer kiezen is er nooit een cluster leeg: een
+ *     centroid begint op een punt, en dat punt ligt op afstand 0 van hem. Aan
+ *     het EINDE is er ook nooit een leeg (0 van 153, 816, 3 060 en 8 568). Maar
+ *     onderweg gebeurt het precies één keer: met 5 clusters en start 7, 10,
+ *     13, 15, 17 (indexen in PUNTEN, zoals START_SLIDES; op het bord heten ze
+ *     punt 8, 11, 14, 16 en 18) verliest de vierde cluster bij de tweede keer
+ *     kiezen zijn laatste punt. `schuifNaarGemiddelde` laat die centroid
+ *     dan staan, en bij de volgende keer kiezen krijgt hij er weer één. Het
+ *     bord zegt daarom nergens "k-means maakt altijd precies zoveel clusters",
+ *     en in die ene toestand zegt het dat die centroid blijft staan.
  *   - Er is nergens een gelijke stand: geen enkel punt ligt ooit even ver van
- *     twee centroids (0 keer over alle starts voor 2, 3 en 4 clusters). De
- *     regel voor een gelijke stand hieronder draait dus nooit, maar staat er
- *     zodat het bord ook dan iets zinnigs doet.
+ *     twee centroids (0 keer over alle starts voor 2 tot 5 clusters, ook bij
+ *     de eerste keer kiezen; het kleinste verschil in kwadratische afstand is
+ *     3,0 bij 5 clusters, ver boven de 1e-9 hieronder). De regel voor een
+ *     gelijke stand draait dus nooit, maar staat er zodat het bord ook dan
+ *     iets zinnigs doet. En daarom maakt de VOLGORDE waarin je de punten
+ *     aanklikt niets uit voor de uitkomst, alleen voor de kleuren.
  *
  * WAT NIET KLOPT EN DUS NERGENS OP HET BORD STAAT: "elke keer wisselen er
- * minder punten". Het aantal wissels STIJGT eens in 26 van de 153 starts met 2
- * clusters en in 11 van de 816 met 3. Het bord zegt alleen wat altijd waar is:
- * k-means stopt de eerste keer dat geen enkel punt wisselt.
+ * minder punten". Het aantal wissels STIJGT eens (kolom "wissels stijgen"
+ * hierboven: 26 van de 153 starts met 2 clusters, 11 van de 816 met 3). Het
+ * bord zegt alleen wat altijd waar is: k-means stopt de eerste keer dat geen
+ * enkel punt wisselt.
  *
  * Deze getallen worden op het bord NIET overgetypt. `uitkomsten()` rekent ze
- * bij het laden opnieuw uit de punten, en het bord toont wat daar uitkomt.
+ * in de browser opnieuw uit de punten, en het bord toont wat daar uitkomt.
  * ------------------------------------------------------------------ */
 
 export type Punt = { x: number; y: number }
@@ -97,8 +123,8 @@ export function kiesDichtste(centroids: readonly Punt[], vorige: readonly number
  * Stap 2: elke centroid schuift naar het gemiddelde van zijn punten.
  *
  * Een cluster zonder punten houdt zijn centroid waar hij stond. Met starts op
- * datapunten gebeurt dat hier nooit (gemeten voor 2, 3 en 4 clusters), maar
- * een NaN-centroid zou het hele bord leeg tekenen.
+ * datapunten gebeurt dat hier één keer, in één van de 8 568 starts met 5
+ * clusters (zie boven), en een NaN-centroid zou het hele bord leeg tekenen.
  */
 export function schuifNaarGemiddelde(centroids: readonly Punt[], clusters: readonly number[]): Punt[] {
   return centroids.map((c, j) => {
@@ -164,9 +190,11 @@ export type Uitkomsten = {
 const cache = new Map<number, Uitkomsten>()
 
 /**
- * Alle starts voor k clusters, elk tot het einde gedraaid. Voor 3 clusters
- * zijn dat 816 runs van een handvol stappen op 18 punten: gemeten ruim onder
- * 50 ms, en maar één keer per k.
+ * Alle starts voor k clusters, elk tot het einde gedraaid. Voor 5 clusters
+ * zijn dat 8 568 runs: gemeten 40 ms in node en 48 ms in Chromium, en maar één
+ * keer per k. Het bord vraagt dit pas op als een run klaar is, en warmt het
+ * 400 ms nadat het aantal gekozen is al op, zodat de klik op het aantal zelf
+ * niet hapert.
  */
 export function uitkomsten(k: number): Uitkomsten {
   const al = cache.get(k)

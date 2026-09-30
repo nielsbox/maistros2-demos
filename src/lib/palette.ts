@@ -30,6 +30,12 @@ export const FOUT = 'var(--color-fout)'
 /** De derde rol op een bord, naast de punten en de lijn. */
 export const DERDE = 'var(--color-derde)'
 
+/** De vierde en vijfde rol, alleen op een bord dat vijf categorieën tegelijk
+ *  nodig heeft (les 7, tot 5 clusters). Samen met MODEL, FOUT en DERDE getoetst
+ *  als set van vijf, alle paren, en alles PASS: zie index.css. */
+export const VIERDE = 'var(--color-vierde)'
+export const VIJFDE = 'var(--color-vijfde)'
+
 /** De punten van de leerling. Dit is de huiskleur navy: een inkt, geen reeks,
  *  en daarom valt ze buiten de lichtheidsband van de merken. Ze mag dat zijn
  *  omdat ze nergens tegen een ander merk hoeft te concurreren op tint. */
@@ -45,6 +51,10 @@ export const FOUT_INK = 'var(--color-fout-ink)'
 
 /** Tekst bij de derde rol. */
 export const DERDE_INK = 'var(--color-derde-ink)'
+
+/** Tekst bij de vijfde rol. De vierde heeft er geen nodig: VIERDE haalt zelf
+ *  6,95:1 op wit. */
+export const VIJFDE_INK = 'var(--color-vijfde-ink)'
 
 /* --------------------------- vlak en tekst ------------------------- */
 
