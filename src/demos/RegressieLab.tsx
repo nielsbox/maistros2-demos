@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Canvas, {
   Dots,
   DragDot,
@@ -6,7 +6,7 @@ import Canvas, {
   type CanvasApi,
   type View,
 } from '../components/Canvas'
-import { Brief, Btn, Divider, Note, Panel, PyChip, Readout } from '../components/Overlay'
+import { Brief, Btn, Divider, Note, Panel, PyChip, Readout, Sec, SegBtn } from '../components/Overlay'
 import {
   bestFit,
   clamp,
@@ -935,44 +935,5 @@ function FoutCurve({ values, oud }: { values: number[]; oud: boolean }) {
         />
       )}
     </svg>
-  )
-}
-
-/** Kopje van een blok in het paneel, met eventueel een kort cijfer rechts. */
-function Sec({ label, meta }: { label: string; meta?: ReactNode }) {
-  return (
-    <div className="flex items-baseline justify-between gap-2">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.11em] text-muted">
-        {label}
-      </span>
-      {meta && <span className="text-[11.5px] leading-none text-muted/80">{meta}</span>}
-    </div>
-  )
-}
-
-/** Eén keuze uit de kiezer van de data set. De rand blijft staan als hij actief is,
- *  anders verspringt het raster een pixel bij elke wissel. */
-function SegBtn({
-  active,
-  onClick,
-  label,
-}: {
-  active: boolean
-  onClick: () => void
-  label: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-lg border px-2 py-1.5 text-[12.5px] font-semibold transition ${
-        active
-          ? 'border-model bg-model text-white'
-          : 'border-model/20 text-model hover:bg-model/6'
-      }`}
-    >
-      {label}
-    </button>
   )
 }

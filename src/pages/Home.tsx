@@ -145,6 +145,15 @@ const LESSONS: Lesson[] = [
         doel: 'K-means herhaalt twee stappen tot er niks meer verandert',
         doen: 'Kies hoeveel clusters je wil, van 2 tot 5. Klik op evenveel punten, of druk op Kies willekeurig. Dat worden de centroids. Druk dan zelf om beurten op knop 1 en knop 2, tot geen enkel punt nog van kleur verandert.',
       },
+      {
+        /* Het tweede bord van les 7. Het doel gaat over het AANTAL, niet over
+           de lus: dat is het eerste bord. */
+        to: '/les7/hoeveel-clusters',
+        title: 'Hoeveel clusters?',
+        soort: 'mini-demo',
+        doel: 'K-means maakt zoveel clusters als jij vraagt',
+        doen: 'Kies een data set en een aantal clusters. Vergelijk 2, 3, 4 en 5. Begin bij de drie groepjes en eindig bij de klanten.',
+      },
     ],
   },
   {

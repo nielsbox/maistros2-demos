@@ -61,6 +61,11 @@
 
 export type Punt = { x: number; y: number }
 
+/** 2 tot 5 clusters: het bereik van Stap 6 (2129379). Beide borden van les 7
+ *  laten precies die vier kiezen. */
+export type Aantal = 2 | 3 | 4 | 5
+export const AANTALLEN: readonly Aantal[] = [2, 3, 4, 5]
+
 const HOOGTE = 662
 
 const RUW: [number, number][] = [
@@ -99,9 +104,23 @@ const afstand2 = (a: Punt, b: Punt) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2
  * een punt nooit laat wisselen zonder dat een andere centroid echt dichterbij
  * ligt, dus de stopregel blijft eerlijk. (Gemeten: het gebeurt op deze data
  * nooit.)
+ *
+ * EEN ALGORITME, TWEE BORDEN. De versies met `In` nemen de punten als
+ * argument: "Hoeveel clusters?" (src/lib/clusterdata.ts) draait deze zelfde
+ * lus op drie andere data sets. De versies zonder `In` zijn die met de 18
+ * punten van de slides, en gedragen zich precies zoals voor die splitsing.
+ * Gemeten 2026-10-01 tegen de code van voor de splitsing, over alle 12 597
+ * starts met 2 tot 5 clusters: elke tussenstap van `kiesDichtste` en
+ * `schuifNaarGemiddelde` gelijk (0 verschillen), dezelfde eindclusters, en
+ * dezelfde telling van `uitkomsten` (1 / 39 / 251 / 748). Kopieer de lus
+ * nergens naar een bord: er is maar een plek waar k-means staat.
  */
-export function kiesDichtste(centroids: readonly Punt[], vorige: readonly number[] | null): number[] {
-  return PUNTEN.map((p, i) => {
+export function kiesDichtsteIn(
+  punten: readonly Punt[],
+  centroids: readonly Punt[],
+  vorige: readonly number[] | null,
+): number[] {
+  return punten.map((p, i) => {
     let beste = 0
     let besteD = Infinity
     centroids.forEach((c, j) => {
@@ -119,6 +138,27 @@ export function kiesDichtste(centroids: readonly Punt[], vorige: readonly number
   })
 }
 
+export function kiesDichtste(centroids: readonly Punt[], vorige: readonly number[] | null): number[] {
+  return kiesDichtsteIn(PUNTEN, centroids, vorige)
+}
+
+/**
+ * Hoeveel punten even ver (op 1e-9) van twee of meer centroids liggen. Alleen
+ * om te meten: bij 0 doet de regel voor een gelijke stand hierboven nooit iets,
+ * en maakt de volgorde van de centroids niets uit voor de uitkomst.
+ */
+export function gelijkeStanden(punten: readonly Punt[], centroids: readonly Punt[]): number {
+  let n = 0
+  for (const p of punten) {
+    let besteD = Infinity
+    for (const c of centroids) besteD = Math.min(besteD, afstand2(p, c))
+    let dicht = 0
+    for (const c of centroids) if (Math.abs(afstand2(p, c) - besteD) <= 1e-9) dicht++
+    if (dicht > 1) n++
+  }
+  return n
+}
+
 /**
  * Stap 2: elke centroid schuift naar het gemiddelde van zijn punten.
  *
@@ -126,15 +166,23 @@ export function kiesDichtste(centroids: readonly Punt[], vorige: readonly number
  * datapunten gebeurt dat hier één keer, in één van de 8 568 starts met 5
  * clusters (zie boven), en een NaN-centroid zou het hele bord leeg tekenen.
  */
-export function schuifNaarGemiddelde(centroids: readonly Punt[], clusters: readonly number[]): Punt[] {
+export function schuifNaarGemiddeldeIn(
+  punten: readonly Punt[],
+  centroids: readonly Punt[],
+  clusters: readonly number[],
+): Punt[] {
   return centroids.map((c, j) => {
-    const van = PUNTEN.filter((_, i) => clusters[i] === j)
+    const van = punten.filter((_, i) => clusters[i] === j)
     if (van.length === 0) return c
     return {
       x: van.reduce((s, p) => s + p.x, 0) / van.length,
       y: van.reduce((s, p) => s + p.y, 0) / van.length,
     }
   })
+}
+
+export function schuifNaarGemiddelde(centroids: readonly Punt[], clusters: readonly number[]): Punt[] {
+  return schuifNaarGemiddeldeIn(PUNTEN, centroids, clusters)
 }
 
 /** Hoeveel punten een andere cluster kregen. */
@@ -159,17 +207,35 @@ export function sleutel(clusters: readonly number[]): string {
     .join(',')
 }
 
-/** Het hele algoritme vanaf een start, tot er geen enkel punt meer wisselt. */
-export function draaiTotHetEinde(start: readonly number[]): number[] {
-  let centroids: Punt[] = start.map((i) => PUNTEN[i])
-  let clusters = kiesDichtste(centroids, null)
+/** Het eindresultaat van een run: de clusters en waar de centroids staan. */
+export type Eind = { clusters: number[]; centroids: Punt[] }
+
+/**
+ * Het hele algoritme vanaf een start (indexen in `punten`), tot er geen enkel
+ * punt meer wisselt.
+ *
+ * De centroids die terugkomen staan op het gemiddelde van de clusters die
+ * terugkomen. Dat hoeft niet opnieuw uitgerekend te worden: de lus stopt pas
+ * als knop 1 na de laatste keer schuiven niemand van cluster doet wisselen, en
+ * dan zijn het nog dezelfde clusters als die waarvan net het gemiddelde
+ * genomen werd. Alleen als de grens van 100 rondes zou vallen, is dat niet zo
+ * (gemeten: dat gebeurt nooit), en dan schuiven ze nog een keer.
+ */
+export function draaiTotHetEindeIn(punten: readonly Punt[], start: readonly number[]): Eind {
+  let centroids: Punt[] = start.map((i) => punten[i])
+  let clusters = kiesDichtsteIn(punten, centroids, null)
   for (let keer = 0; keer < 100; keer++) {
-    centroids = schuifNaarGemiddelde(centroids, clusters)
-    const volgende = kiesDichtste(centroids, clusters)
-    if (aantalWissels(clusters, volgende) === 0) return volgende
+    centroids = schuifNaarGemiddeldeIn(punten, centroids, clusters)
+    const volgende = kiesDichtsteIn(punten, centroids, clusters)
+    if (aantalWissels(clusters, volgende) === 0) return { clusters: volgende, centroids }
     clusters = volgende
   }
-  return clusters
+  return { clusters, centroids: schuifNaarGemiddeldeIn(punten, centroids, clusters) }
+}
+
+/** Het hele algoritme op de 18 punten van de slides. */
+export function draaiTotHetEinde(start: readonly number[]): number[] {
+  return draaiTotHetEindeIn(PUNTEN, start).clusters
 }
 
 function* combinaties(n: number, k: number, van = 0, huidig: number[] = []): Generator<number[]> {
