@@ -17,6 +17,7 @@ import KijkInDeQTabel from './demos/KijkInDeQTabel'
 import StemmendBos from './demos/StemmendBos'
 import KMeansStappen from './demos/KMeansStappen'
 import HoeveelClusters from './demos/HoeveelClusters'
+import WaarKomtDeKnikVandaan from './demos/WaarKomtDeKnikVandaan'
 
 export default function App() {
   return (
@@ -42,6 +43,8 @@ export default function App() {
         <Route path="/les7/k-means-stap-voor-stap" element={<KMeansStappen />} />
         {/* les 7, het tweede bord: hoeveel clusters k-means maakt (HoeveelClusters.tsx) */}
         <Route path="/les7/hoeveel-clusters" element={<HoeveelClusters />} />
+        {/* les 8: waar de knik in de grafiek van de inertia vandaan komt */}
+        <Route path="/les8/waar-komt-de-knik-vandaan" element={<WaarKomtDeKnikVandaan />} />
         {/* les 12 */}
         <Route path="/les12/kijk-in-de-q-tabel" element={<KijkInDeQTabel />} />
         {/*

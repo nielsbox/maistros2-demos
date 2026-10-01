@@ -157,6 +157,22 @@ const LESSONS: Lesson[] = [
     ],
   },
   {
+    les: 'Les 8',
+    titel: 'Clustering II',
+    tint: 'var(--color-peach)',
+    demos: [
+      {
+        /* Het doel is de knik, niet het aantal (les 7, bord 2) en niet de lus
+           (les 7, bord 1). */
+        to: '/les8/waar-komt-de-knik-vandaan',
+        title: 'Waar komt de knik vandaan?',
+        soort: 'mini-demo',
+        doel: 'De knik is waar een extra cluster nog maar weinig scheelt',
+        doen: 'Druk telkens op 1 cluster meer. Kijk naar de lijntjes en de grafiek. Begin bij de drie groepjes, eindig bij geen groepjes.',
+      },
+    ],
+  },
+  {
     les: 'Les 12',
     titel: 'Q-learning',
     tint: 'var(--color-sky)',
