@@ -18,6 +18,7 @@ import StemmendBos from './demos/StemmendBos'
 import KMeansStappen from './demos/KMeansStappen'
 import HoeveelClusters from './demos/HoeveelClusters'
 import WaarKomtDeKnikVandaan from './demos/WaarKomtDeKnikVandaan'
+import EenNeuronZoektZijnGetal from './demos/EenNeuronZoektZijnGetal'
 
 export default function App() {
   return (
@@ -45,6 +46,8 @@ export default function App() {
         <Route path="/les7/hoeveel-clusters" element={<HoeveelClusters />} />
         {/* les 8: waar de knik in de grafiek van de inertia vandaan komt */}
         <Route path="/les8/waar-komt-de-knik-vandaan" element={<WaarKomtDeKnikVandaan />} />
+        {/* les 9: idem (EenNeuronZoektZijnGetal.tsx) */}
+        <Route path="/les9/een-neuron-zoekt-zijn-getal" element={<EenNeuronZoektZijnGetal />} />
         {/* les 12 */}
         <Route path="/les12/kijk-in-de-q-tabel" element={<KijkInDeQTabel />} />
         {/*

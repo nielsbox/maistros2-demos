@@ -173,6 +173,20 @@ const LESSONS: Lesson[] = [
     ],
   },
   {
+    les: 'Les 9',
+    titel: 'Neurale netwerken',
+    tint: 'var(--color-peach)',
+    demos: [
+      {
+        to: '/les9/een-neuron-zoekt-zijn-getal',
+        title: 'Eén neuron zoekt zijn getal',
+        soort: 'mini-demo',
+        doel: 'Voorbeeld per voorbeeld past het neuron zijn getal aan',
+        doen: 'Het neuron zet pond om naar kilogram en ziet hoe ver het ernaast zit. Kies zelf of zijn getal kleiner wordt, groter wordt of blijft. Laat het daarna alle voorbeelden overlopen, keer na keer, tot elke fout kleiner is dan 0,01.',
+      },
+    ],
+  },
+  {
     les: 'Les 12',
     titel: 'Q-learning',
     tint: 'var(--color-sky)',
