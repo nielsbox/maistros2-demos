@@ -20,6 +20,7 @@ import HoeveelClusters from './demos/HoeveelClusters'
 import WaarKomtDeKnikVandaan from './demos/WaarKomtDeKnikVandaan'
 import EenNeuronZoektZijnGetal from './demos/EenNeuronZoektZijnGetal'
 import KiesDeLeersnelheid from './demos/KiesDeLeersnelheid'
+import WatDoetHetModelNa from './demos/WatDoetHetModelNa'
 
 export default function App() {
   return (
@@ -51,6 +52,8 @@ export default function App() {
         <Route path="/les9/een-neuron-zoekt-zijn-getal" element={<EenNeuronZoektZijnGetal />} />
         {/* les 10 */}
         <Route path="/les10/kies-de-leersnelheid" element={<KiesDeLeersnelheid />} />
+        {/* les 11: de route volgt de titel op het bord (WatDoetHetModelNa.tsx) */}
+        <Route path="/les11/wat-doet-het-model-na" element={<WatDoetHetModelNa />} />
         {/* les 12 */}
         <Route path="/les12/kijk-in-de-q-tabel" element={<KijkInDeQTabel />} />
         {/*

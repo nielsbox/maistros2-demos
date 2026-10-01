@@ -201,6 +201,20 @@ const LESSONS: Lesson[] = [
     ],
   },
   {
+    les: 'Les 11',
+    titel: 'Imitation learning',
+    tint: 'var(--color-lime)',
+    demos: [
+      {
+        to: '/les11/wat-doet-het-model-na',
+        title: 'Wat doet het model na?',
+        soort: 'mini-demo',
+        doel: 'Het model maakt van een klein verschil een vaste regel',
+        doen: 'Elk pijltje is een waarneming uit 50 spelletjes met willekeurige acties. Houd enkel de goede spelletjes en train het model. Laat het daarna spelen, en vergelijk met de computer die willekeurig speelt.',
+      },
+    ],
+  },
+  {
     les: 'Les 12',
     titel: 'Q-learning',
     tint: 'var(--color-sky)',
