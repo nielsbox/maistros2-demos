@@ -24,8 +24,9 @@
  * en het model van de les (vier getallen) hetzelfde op 91 van de 99 pijltjes
  * van de test set, en ze hebben dezelfde accuracy, 55 van de 99. Over 2000
  * andere seeds is de mediaan 0,93 van de test set. Tijdens het SPELEN
- * verschillen ze meer (ongeveer 0,75 van de acties), en daarom zegt het bord
- * bij het afspelen dat het DIT bordmodel is dat speelt.
+ * verschillen ze meer (ongeveer 0,75 van de acties), en daarom heet het bij
+ * het afspelen "Dit model speelt" en "dit model": hetzelfde "dit model" als de
+ * zin na het trainen, die zegt dat het naar twee getallen kijkt.
  *
  * AFRONDING. Hoek, hoeksnelheid, positie en snelheid staan op 4 beduidende
  * cijfers, de drie coefficienten van het model onafgerond. Nagemeten bij het
@@ -200,7 +201,7 @@ export function accuracy(m: Model, W: readonly Waarneming[]): Kant {
   return { juist: test.filter((w) => kiest(m, w.hoek, w.hoeksnelheid) === w.actie).length, van: test.length }
 }
 
-/** "hier 51 van de 100 keer": een aandeel als heel getal van de 100. */
+/** "51 van de 100 keer": een aandeel als heel getal van de 100. */
 export const vanDe100 = (k: Kant) => Math.round((100 * k.juist) / Math.max(1, k.van))
 
 /** Hoe vaak het afgespeelde spelletje van actie wisselt. */
@@ -232,8 +233,8 @@ export function wegVanDeLijn(m: Model, a: Afgespeeld): { eerste: number; laatste
  * lege lijst betekent dat elke zin klopt. Het bord roept dit in dev op en
  * schreeuwt in de console als een zin niet meer klopt, bijvoorbeeld na een
  * nieuw bestand met een andere seed. De getallen zelf komen altijd uit de
- * tellingen; dit bewaakt de WOORDEN eromheen ("ongeveer de helft", "nu vaker",
- * "altijd", "de andere kant op", "loopt weg").
+ * tellingen; dit bewaakt de WOORDEN eromheen ("ongeveer 50 van de 100", "nu
+ * vaker", "altijd", "de andere kant op", "loopt weg", "speelt toch langer").
  *
  * Niet na te rekenen in de browser, en dus gemeten bij het maken van het
  * bestand: "jouw model kiest meestal hetzelfde" (91 van de 99 op de test set)
@@ -249,7 +250,7 @@ export function controleer(d: CartPole): string[] {
   const l = perKantVanDeLijn(d.model, X)
   const deel = (k: Kant) => k.juist / Math.max(1, k.van)
   if ([a.rechts, a.links].some((k) => Math.abs(vanDe100(k) - 50) > 5))
-    fout.push('stap 1 zegt "aan elke kant ongeveer de helft"')
+    fout.push('stap 1 zegt "in beide helften ongeveer 50 van de 100"')
   if (!(deel(g.rechts) > deel(a.rechts) && deel(g.links) > deel(a.links)))
     fout.push('stap 2 zegt "nu vaker", aan beide kanten')
   if (!(deel(g.rechts) > 0.5 && deel(g.links) > 0.5)) fout.push('stap 2: de goede helften liggen niet boven de helft')
@@ -271,7 +272,7 @@ export function controleer(d: CartPole): string[] {
       break
     }
   }
-  if (!(d.modelSpeelt.punten > d.willekeurigSpeelt.punten)) fout.push('het model speelt niet langer dan willekeurig')
+  if (!(d.modelSpeelt.punten > d.willekeurigSpeelt.punten)) fout.push('het model speelt niet langer dan de computer')
   const m = wegVanDeLijn(d.model, d.modelSpeelt)
   const r = wegVanDeLijn(d.model, d.willekeurigSpeelt)
   if (!(r.laatste > 2 * r.eerste && r.laatste > 2 * m.laatste)) fout.push('stap 4 zegt "de ring loopt weg"')

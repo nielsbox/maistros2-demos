@@ -83,20 +83,29 @@ import { DATA, DERDE, DERDE_INK, INK, MODEL, MUTED, NAVY, RULE } from '../lib/pa
  * emoji-tekens (Extended_Pictographic) en kunnen als emoji verschijnen.
  *
  * DE ZINNEN OP HET BORD, per fase, nooit meer dan vier tegelijk (de woorden bij
- * de assen niet meegeteld): de twee helften met hun balkje (fase 1 en 2), de
- * twee kanten van de lijn op twee regels (fase 3), en bij het spelen "altijd"
- * aan elke kant plus "nu" of "hier is het spelletje afgelopen" (fase 4). Elk
- * getal komt uit de tellingen in lib/les11.ts, en `controleer` daar rekent in
- * dev na of de woorden eromheen nog kloppen.
+ * de assen niet meegeteld). Elke zin begint met het gebied dat hij telt:
+ * "in de rechterhelft" met een getal en een balkje (fase 1 en 2), "rechts van
+ * de lijn" met een getal en "model: altijd" (fase 3), en bij het spelen alleen
+ * nog "model: altijd" aan elke kant plus "nu" of "hier is het spelletje
+ * afgelopen" (fase 4). Elk getal komt uit de tellingen in lib/les11.ts, en
+ * `controleer` daar rekent in dev na of de woorden eromheen nog kloppen.
+ *
+ * HET PANEEL BIJ HET SPELEN volgt wie NU speelt: de zin over de lijn kruisen
+ * alleen bij het model, en de laatste zin vraagt om de ander te laten spelen
+ * tot ze allebei uitgespeeld hebben (zie `Slotzin`).
  *
  * GEMETEN OP DIT BORD (headless Chromium, 1440x900, 1280x800, 1024x768 en
- * 900x700, in tien toestanden van begin tot einde): geen enkel pijltje onder
- * een paneel, geen paneel dat scrolt, geen zin onder een paneel of tegen een
- * andere zin, geen fout in de console. De ring staat bij het model gemiddeld
- * 0,15 hoeksnelheid van de lijn: 17 px op 1024x768 en 14 px op 900x700, waar
- * het vrije vlak 662 en 538 px breed is. Bij 11 van de 65 standen is dat op
- * 1024x768 minder dan 6 px; zo dicht speelt het model, en daarom is de ring
- * half doorzichtig.
+ * 900x700, in vijftien toestanden van begin tot einde, ook de computer die het
+ * model onderbreekt, en daarnaast elke stand van beide afgespeelde spelletjes):
+ * geen enkel pijltje onder een paneel, geen paneel dat scrolt, geen zin onder
+ * een paneel of tegen een andere zin, geen stuk lijn onder een paneel, "nu"
+ * nooit dichter dan 7,6 px bij de lijn, geen fout in de console. De ring staat
+ * bij het model gemiddeld 0,15 hoeksnelheid van de lijn: 17 px op 1024x768 en
+ * 14 px op 900x700, waar het vrije vlak 662 en 538 px breed is. Bij 11 van de
+ * 65 standen is dat op 1024x768 minder dan 6 px; zo dicht speelt het model, en
+ * daarom is de ring half doorzichtig. Het spoor van het model past op 1024x768
+ * in ongeveer 60 bij 30 px: dat is hoe weinig de stok beweegt als het model
+ * speelt, en wie het groter wil zien, zoomt in.
  * ------------------------------------------------------------------ */
 
 /**
@@ -137,6 +146,11 @@ function breedte(t: string, px = BORD_PX, gewicht = 700): number {
   meetDoek.font = `${gewicht} ${px}px 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif`
   return meetDoek.measureText(t).width
 }
+
+/** Een rechthoek in schermpixels. */
+type Doos = { x0: number; y0: number; x1: number; y1: number }
+const raakt = (a: Doos, b: Doos, marge = 3) =>
+  a.x0 - marge < b.x1 && b.x0 - marge < a.x1 && a.y0 - marge < b.y1 && b.y0 - marge < a.y1
 
 /* ------------------------------ tekenwerk ------------------------------ */
 
@@ -487,15 +501,12 @@ function Bord({
   const metLijn = fase === 'getraind' || fase === 'speelt'
   const h = fase === 'alle' ? t.alle : t.goede
 
-  /* De lijn: waar de kans op rechts precies 0,50 is. */
-  const lijn = metLijn
-    ? {
-        x1: s.sx(lijnBij(d.model, s.view.y0)),
-        y1: s.sy(s.view.y0),
-        x2: s.sx(lijnBij(d.model, s.view.y1)),
-        y2: s.sy(s.view.y1),
-      }
-    : null
+  /* De lijn: waar de kans op rechts precies 0,50 is. Alleen in het vrije vlak,
+     van safe.top tot safe.bottom en niet over de hele hoogte: op 900x700 liep
+     ze anders boven het paneel rechtsboven uit, verdween erachter en kwam
+     eronder terug, en dan leest ze als een lijn die het paneel in gaat. */
+  const lijnX = (py: number) => s.sx(lijnBij(d.model, s.iy(py)))
+  const lijn = metLijn ? { x1: lijnX(safe.bottom), y1: safe.bottom, x2: lijnX(safe.top), y2: safe.top } : null
 
   const rx = s.sx(ZIN_RECHTS.hoeksnelheid)
   const ry = s.sy(ZIN_RECHTS.hoek)
@@ -507,6 +518,22 @@ function Bord({
   const nu = spel ? spel.standen[Math.min(i, spel.standen.length - 1)] : null
   const spoor = spel ? spel.standen.slice(Math.max(0, i - SPOOR), i + 1) : []
   const afgelopen = spel !== null && nu !== null && nu.actie === null
+
+  /* Waar vaste bordtekst staat bij het spelen, zodat "nu" er niet op valt. De
+     ring van het model klimt naar de woorden bovenaan de hoek-as: met "nu" aan
+     de kant weg van de lijn botste het daar op "hoek" (op elk scherm, op een
+     paar standen). */
+  const bezet: Doos[] =
+    fase === 'speelt'
+      ? [
+          { x0: x0 - 26 - breedte('stok helt naar rechts'), y0: safe.top + 2, x1: x0 - 5, y1: safe.top + 37 },
+          { x0: x0 - 26 - breedte('stok helt naar links'), y0: safe.bottom - 22, x1: x0 - 5, y1: safe.bottom - 4 },
+          { x0: safe.right - 6 - breedte('stok beweegt naar rechts →'), y0: y0 + 8, x1: safe.right - 6, y1: y0 + 40 },
+          { x0: safe.left + 6, y0: y0 - 19, x1: safe.left + 6 + breedte('← stok beweegt naar links'), y1: y0 - 4 },
+          { x0: rx, y0: ry - 30, x1: rx + breedte('rechts van de lijn') + 14, y1: ry + 4 },
+          { x0: lx - breedte('links van de lijn') - 14, y0: ly - 30, x1: lx, y1: ly + 4 },
+        ]
+      : []
 
   return (
     <g>
@@ -535,7 +562,9 @@ function Bord({
       <BordTekst x={safe.right - 6} y={y0 + 19} anker="end">
         stok beweegt naar rechts &rarr;
       </BordTekst>
-      <BordTekst x={safe.right - 6} y={y0 + 36} anker="end" px={12.5} gewicht={600} kleur={MUTED}>
+      {/* De naam van de as: lichter dan de woorden erboven, maar wel 13 px vet,
+          want ook dit lees je van achteraan in de klas. */}
+      <BordTekst x={safe.right - 6} y={y0 + 36} anker="end" px={13} kleur={MUTED}>
         hoeksnelheid
       </BordTekst>
       <BordTekst x={safe.left + 6} y={y0 - 8}>
@@ -545,7 +574,7 @@ function Bord({
         stok helt naar rechts
       </BordTekst>
       <HeltTeken x={x0 - 13} y={safe.top + 17} rechts />
-      <BordTekst x={x0 - 26} y={safe.top + 33} anker="end" px={12.5} gewicht={600} kleur={MUTED}>
+      <BordTekst x={x0 - 26} y={safe.top + 33} anker="end" px={13} kleur={MUTED}>
         hoek
       </BordTekst>
       <BordTekst x={x0 - 26} y={safe.bottom - 8} anker="end">
@@ -553,21 +582,30 @@ function Bord({
       </BordTekst>
       <HeltTeken x={x0 - 13} y={safe.bottom - 7} rechts={false} />
 
+      {/* ----- welk gebied elke zin telt -----
+          De zinnen staan in elke fase op dezelfde plaats, maar tellen niet
+          hetzelfde: eerst een helft van het vlak (gescheiden door de verticale
+          as), na het trainen een kant van de lijn. De 57 goede pijltjes tussen
+          de as en de lijn wisselen dan van groep, en zo wordt 54 en 58 opeens
+          57 en 57. Met alleen "hier" stond nergens waarom; nu zegt de eerste
+          regel van elke zin welk gebied hij telt. */}
+      <BordTekst x={rx} y={ry - 18}>
+        {helften ? 'in de rechterhelft' : 'rechts van de lijn'}
+      </BordTekst>
+      <BordTekst x={lx} y={ly - 18} anker="end">
+        {helften ? 'in de linkerhelft' : 'links van de lijn'}
+      </BordTekst>
+
       {/* ----- per helft: hoe vaak duwde de kar naar waar de stok bewoog ----- */}
       {helften && (
         <>
-          <TekstMetPijl
-            x={rx}
-            y={ry}
-            tekst={`hier ${getal(vanDe100(h.rechts))} van de 100 keer`}
-            actie={RECHTS}
-          />
+          <TekstMetPijl x={rx} y={ry} tekst={`${getal(vanDe100(h.rechts))} van de 100 keer`} actie={RECHTS} />
           <Balkje x={rx} y={ry + 9} aandeel={h.rechts.juist / h.rechts.van} />
           <TekstMetPijl
             x={lx}
             y={ly}
             anker="end"
-            tekst={`hier ${getal(vanDe100(h.links))} van de 100 keer`}
+            tekst={`${getal(vanDe100(h.links))} van de 100 keer`}
             actie={LINKS}
           />
           <Balkje x={lx - 128} y={ly + 9} aandeel={h.links.juist / h.links.van} />
@@ -577,23 +615,31 @@ function Bord({
       {/* ----- per kant van de lijn ----- */}
       {fase === 'getraind' && (
         <>
-          <TekstMetPijl
-            x={rx}
-            y={ry}
-            tekst={`hier ${getal(vanDe100(t.lijn.rechts))} van de 100 keer`}
-            actie={RECHTS}
-          />
-          <TekstMetPijl x={rx} y={ry + 19} tekst="model: altijd" actie={RECHTS} kleur={NAVY} pijlKleur={MODEL} />
+          <TekstMetPijl x={rx} y={ry} tekst={`${getal(vanDe100(t.lijn.rechts))} van de 100 keer`} actie={RECHTS} />
           <TekstMetPijl
             x={lx}
             y={ly}
             anker="end"
-            tekst={`hier ${getal(vanDe100(t.lijn.links))} van de 100 keer`}
+            tekst={`${getal(vanDe100(t.lijn.links))} van de 100 keer`}
             actie={LINKS}
+          />
+        </>
+      )}
+      {/* De regel van het model: na het trainen onder de telling, bij het spelen
+          zonder telling. Ook als de computer speelt staat er "model:", want
+          de computer volgt die regel niet. */}
+      {metLijn && (
+        <>
+          <TekstMetPijl
+            x={rx}
+            y={fase === 'getraind' ? ry + 19 : ry}
+            tekst="model: altijd"
+            actie={RECHTS}
+            pijlKleur={MODEL}
           />
           <TekstMetPijl
             x={lx}
-            y={ly + 19}
+            y={fase === 'getraind' ? ly + 19 : ly}
             anker="end"
             tekst="model: altijd"
             actie={LINKS}
@@ -601,16 +647,19 @@ function Bord({
           />
         </>
       )}
-      {fase === 'speelt' && (
-        <>
-          <TekstMetPijl x={rx} y={ry} tekst="altijd" actie={RECHTS} pijlKleur={MODEL} />
-          <TekstMetPijl x={lx} y={ly} anker="end" tekst="altijd" actie={LINKS} pijlKleur={MODEL} />
-        </>
-      )}
 
       {/* ----- het afspelen: de ring en zijn spoor ----- */}
       {fase === 'speelt' && spel && nu && (
-        <Spoor s={s} spoor={spoor} nu={nu} kleur={kleur} inkt={inkt} afgelopen={afgelopen} />
+        <Spoor
+          s={s}
+          spoor={spoor}
+          nu={nu}
+          kleur={kleur}
+          inkt={inkt}
+          afgelopen={afgelopen}
+          lijnX={lijnX}
+          bezet={bezet}
+        />
       )}
     </g>
   )
@@ -623,6 +672,8 @@ function Spoor({
   kleur,
   inkt,
   afgelopen,
+  lijnX,
+  bezet,
 }: {
   s: Scales
   spoor: Stand[]
@@ -630,10 +681,29 @@ function Spoor({
   kleur: string
   inkt: string
   afgelopen: boolean
+  /** Waar de lijn ligt op schermhoogte py. */
+  lijnX: (py: number) => number
+  /** Vaste bordtekst waar "nu" niet op mag. */
+  bezet: Doos[]
 }) {
   const cx = s.sx(nu.hoeksnelheid)
   const cy = s.sy(nu.hoek)
   const vorige = spoor.slice(0, -1)
+  /* "nu" boven de ring, maar naar de kant WEG van de lijn, en minstens 8 px
+     ervan. Recht boven de ring stond het op 900x700 op de lijn, want de ring
+     staat daar vaak minder dan 6 px van de lijn. Valt die kant op vaste
+     bordtekst, dan de andere kant, nog altijd 8 px van de lijn. */
+  const nuY = cy - 15
+  const lx = lijnX(nuY - 5)
+  const nuB = breedte('nu')
+  const plek = (rechts: boolean) => {
+    const x = rechts ? Math.max(cx + 4, lx + 8) : Math.min(cx - 4, lx - 8)
+    const d: Doos = { x0: rechts ? x : x - nuB, y0: nuY - 12, x1: rechts ? x + nuB : x, y1: nuY + 4 }
+    return { x, rechts, vrij: !bezet.some((b) => raakt(b, d)) }
+  }
+  const weg = plek(cx >= lx)
+  const anders = plek(!weg.rechts)
+  const nuPlek = weg.vrij || !anders.vrij ? weg : anders
   /* "hier is het spelletje afgelopen": rechts van de ring als het past, anders
      links ervan. Op één regel als het past, anders op twee. */
   const zin = 'hier is het spelletje afgelopen'
@@ -684,7 +754,7 @@ function Spoor({
       ) : (
         /* Boven de ring en niet ernaast: naast de ring staat het spoor, en de
            ring klimt, dus erboven is het nog leeg. */
-        <BordTekst x={cx} y={cy - 16} anker="middle" kleur={inkt}>
+        <BordTekst x={nuPlek.x} y={nuY} anker={nuPlek.rechts ? 'start' : 'end'} kleur={inkt}>
           nu
         </BordTekst>
       )}
@@ -824,7 +894,7 @@ export default function WatDoetHetModelNa() {
           {fase !== 'speelt' ? (
             <>
               <div className="text-[11.5px] font-bold uppercase tracking-[0.09em] text-ink/75">
-                De {d ? getal(d.punten.length) : 50} spelletjes, hoog als hun punten
+                De punten van de {d ? getal(d.punten.length) : 50} spelletjes
               </div>
               <div className="mt-2">
                 {d && <Strook punten={d.punten} drempel={d.drempel} gefilterd={fase !== 'alle'} />}
@@ -839,7 +909,9 @@ export default function WatDoetHetModelNa() {
           ) : (
             <>
               <div className="text-[11.5px] font-bold uppercase tracking-[0.09em] text-ink/75">
-                {speler === 'willekeurig' ? 'De computer speelt willekeurig' : 'Het model speelt'}
+                {/* "Dit model": het bordmodel met twee getallen, hetzelfde "dit
+                    model" als in de zin na het trainen. Jouw model speelt anders. */}
+                {speler === 'willekeurig' ? 'De computer speelt willekeurig' : 'Dit model speelt'}
               </div>
               <div className="mt-1 flex items-end gap-3">
                 <div className="flex flex-col">
@@ -851,9 +923,9 @@ export default function WatDoetHetModelNa() {
                   <span className="text-[11.5px] font-semibold text-muted">vertraagd afgespeeld</span>
                 </div>
                 <div className="flex flex-col gap-1.5 pb-1">
-                  <Uitslag naam="het model" punten={punten('model')} actief={speler === 'model'} kleur={MODEL} />
+                  <Uitslag naam="dit model" punten={punten('model')} actief={speler === 'model'} kleur={MODEL} />
                   <Uitslag
-                    naam="willekeurig"
+                    naam="de computer"
                     punten={punten('willekeurig')}
                     actief={speler === 'willekeurig'}
                     kleur={DERDE_INK}
@@ -880,7 +952,7 @@ export default function WatDoetHetModelNa() {
               speler={speler}
               loopt={loopt}
               klaar={klaar}
-              beide={uitslag.model !== null && uitslag.willekeurig !== null}
+              uitslag={uitslag}
               onFase={setFase}
               onSpeel={speel}
               onPauze={() => setLoopt((v) => !v)}
@@ -924,7 +996,7 @@ function Paneel({
   speler,
   loopt,
   klaar,
-  beide,
+  uitslag,
   onFase,
   onSpeel,
   onPauze,
@@ -937,8 +1009,8 @@ function Paneel({
   speler: Speler | null
   loopt: boolean
   klaar: boolean
-  /** Hebben het model en de computer allebei een spelletje uitgespeeld? */
-  beide: boolean
+  /** De punten van wie zijn spelletje al uitgespeeld heeft, anders null. */
+  uitslag: { model: number | null; willekeurig: number | null }
   onFase: (f: Fase) => void
   onSpeel: (wie: Speler) => void
   onPauze: () => void
@@ -996,7 +1068,7 @@ function Paneel({
               ? 'Trainen'
               : speler === 'willekeurig'
                 ? 'De computer speelt willekeurig'
-                : 'Het model speelt'}
+                : 'Dit model speelt'}
       </div>
       {/* De legende staat er altijd: elk merk op het bord is een pijltje. */}
       <ul className="mt-1.5 space-y-0.5 text-[13px] leading-snug text-ink">
@@ -1017,10 +1089,10 @@ function Paneel({
           <p className={zin}>
             Het bord toont twee van de vier getallen: de hoek en de hoeksnelheid.
           </p>
-          <p className={zin}>Kijk naar de twee balkjes: aan elke kant is het ongeveer de helft.</p>
-          <p className={zin}>
-            Dit bord speelde één keer {getal(d.punten.length)} spelletjes. Jouw getallen zijn anders.
-          </p>
+          {/* "helft" is hier alleen het gebied, zoals op het bord ("in de
+              rechterhelft"); het aandeel staat er als getal. */}
+          <p className={zin}>Kijk naar de balkjes. In beide helften is het ongeveer 50 van de 100.</p>
+          <p className={zin}>Bij jou speelde de computer andere spelletjes. Jouw getallen zijn dus anders.</p>
         </>
       )}
       {fase === 'goede' && (
@@ -1065,31 +1137,36 @@ function Paneel({
       )}
       {fase === 'speelt' && (
         <>
-          <p className={zin}>
-            De ring is de waarneming van nu. Gaat de ring over de lijn, dan duwt het model de andere
-            kant op.
-          </p>
+          {/* Elke zin hoort bij wie NU speelt. De zin over de lijn kruisen geldt
+              alleen voor het model: de ring van de computer gaat 3 keer over de
+              lijn, en 1 keer duwt hij daarna gewoon dezelfde kant op. */}
           {speler === 'willekeurig' ? (
             /* Gemeten op dit spelletje: de ring staat gemiddeld 0,23 van de lijn
                in het eerste kwart en 1,77 in het laatste, tegen 0,14 tot 0,15
                bij het model, in elk kwart. Zijn acties vallen maar 6 van de 16
-               keer samen met de kant van de lijn. */
-            <p className={zin}>
-              De computer kijkt niet naar de lijn. De ring loopt weg, en de stok valt snel.
-            </p>
+               keer samen met de kant van de lijn. "Snel afgelopen": 16 punten
+               tegen 64. */
+            <>
+              <p className={zin}>De ring is de waarneming van nu. De computer kijkt niet naar de lijn.</p>
+              <p className={zin}>De ring loopt weg, en het spelletje is snel afgelopen.</p>
+            </>
           ) : (
-            <p className={zin}>Zo blijft de ring dicht bij de lijn, en blijft de stok langer staan.</p>
+            <>
+              <p className={zin}>
+                De ring is de waarneming van nu. Gaat de ring over de lijn, dan duwt het model de
+                andere kant op.
+              </p>
+              <p className={zin}>Zo blijft de ring dicht bij de lijn, en blijft de stok langer staan.</p>
+            </>
           )}
-          {/* De slotsom van slide 2228132, pas als beide gespeeld hebben: beide
-              getallen komen uit het bestand, de zin alleen als ze kloppen. */}
-          {beide && d.modelSpeelt.punten > d.willekeurigSpeelt.punten ? (
-            <p className={zin}>
-              Het model raadt maar {getal(vanDe100(t.acc))} van de 100 acties juist, en speelt toch
-              langer.
-            </p>
-          ) : (
-            <p className={zin}>Vergelijk daarna met de computer, die willekeurig speelt.</p>
-          )}
+          <Slotzin
+            d={d}
+            t={t}
+            speler={speler}
+            klaar={klaar}
+            uitslag={uitslag}
+            className={zin}
+          />
         </>
       )}
 
@@ -1117,4 +1194,54 @@ function Paneel({
       </div>
     </>
   )
+}
+
+/**
+ * De laatste zin bij het spelen. Ze hangt af van wie al uitgespeeld heeft:
+ *   - allebei: de slotsom van slide 2228132, en alleen als ze klopt (beide
+ *     getallen komen uit het bestand);
+ *   - nog niet de ander: vraag om de ander te laten spelen. Dat geldt ook als
+ *     de leerling het model onderbrak met de computer: anders verscheen de
+ *     slotsom nooit, en vroeg niets om het model opnieuw te laten spelen;
+ *   - de ander wel, deze nog bezig: niets, de slotsom komt zodra hij klaar is.
+ */
+function Slotzin({
+  d,
+  t,
+  speler,
+  klaar,
+  uitslag,
+  className,
+}: {
+  d: CartPole
+  t: Tellingen
+  speler: Speler | null
+  klaar: boolean
+  uitslag: { model: number | null; willekeurig: number | null }
+  className: string
+}) {
+  const beide = uitslag.model !== null && uitslag.willekeurig !== null
+  if (beide && d.modelSpeelt.punten > d.willekeurigSpeelt.punten) {
+    return (
+      <p className={className}>
+        Dit model raadt maar {getal(vanDe100(t.acc))} van de 100 acties juist, en speelt toch langer.
+      </p>
+    )
+  }
+  const wanneer = klaar ? 'nu' : 'daarna'
+  if (speler === 'model' && uitslag.willekeurig === null) {
+    return (
+      <p className={className}>
+        Laat {wanneer} de computer willekeurig spelen, en vergelijk de punten.
+      </p>
+    )
+  }
+  if (speler === 'willekeurig' && uitslag.model === null) {
+    return (
+      <p className={className}>
+        Laat {wanneer} het model spelen, en vergelijk de punten.
+      </p>
+    )
+  }
+  return null
 }
