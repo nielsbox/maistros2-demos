@@ -86,7 +86,7 @@ type SetInfo = {
 }
 
 const SETS: readonly SetInfo[] = [
-  { id: 'drie', naam: 'Drie groepjes', zin: 'Hier weet je hoeveel groepjes er zijn.', ding: 'punten' },
+  { id: 'drie', naam: 'Drie groepjes', zin: 'Hier zie je meteen hoeveel groepjes er zijn.', ding: 'punten' },
   {
     id: 'geen',
     naam: 'Geen groepjes',
@@ -96,7 +96,7 @@ const SETS: readonly SetInfo[] = [
   {
     id: 'klanten',
     naam: 'Klanten',
-    zin: `De ${getal(PUNTEN_VAN.klanten.length)} klanten uit de oefening, herschaald zoals in Stap 4.`,
+    zin: `De ${getal(PUNTEN_VAN.klanten.length)} klanten uit de oefening, herschaald zoals in Stap\u00a04.`,
     ding: 'klanten',
   },
 ]
@@ -520,7 +520,7 @@ export default function HoeveelClusters() {
               "verschilt" vergelijkt met wat de leerling hier ziet. */}
           {set === 'klanten' && (aantal === 4 || aantal === 5) && (
             <p className="mt-2 text-[13.5px] leading-snug text-ink">
-              Bij 4 of 5 clusters verschilt jouw resultaat uit Stap 6 vaak sterk. Dat is geen fout.
+              Bij 4 of 5 clusters verschilt jouw resultaat uit Stap{'\u00a0'}6 vaak sterk van dit bord. Dat is geen fout.
             </p>
           )}
         </div>
