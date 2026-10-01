@@ -187,6 +187,20 @@ const LESSONS: Lesson[] = [
     ],
   },
   {
+    les: 'Les 10',
+    titel: 'Neurale netwerken en hyperparameters',
+    tint: 'var(--color-peach)',
+    demos: [
+      {
+        to: '/les10/kies-de-leersnelheid',
+        title: 'Kies de leersnelheid',
+        soort: 'mini-demo',
+        doel: 'Elke aanpassing is de leersnelheid maal de fouten samen',
+        doen: 'Het netwerk uit les 9 zoekt zelf zijn gewicht. Druk op Eén aanpassing en reken in de tabel mee. Train daarna met een andere leersnelheid en vergelijk hoeveel aanpassingen het nodig heeft.',
+      },
+    ],
+  },
+  {
     les: 'Les 12',
     titel: 'Q-learning',
     tint: 'var(--color-sky)',
