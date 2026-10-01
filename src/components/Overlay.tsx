@@ -233,11 +233,133 @@ export function Steps({
   )
 }
 
-export function PyChip({ children }: { children: ReactNode }) {
+/**
+ * Een stukje Python zoals in de notebook. `tone="navy"` op een bord waar blauw
+ * al iets betekent: op "Hoeveel clusters?" is blauw de eerste cluster, en een
+ * blauwe `n_clusters=3` leest dan alsof hij bij die cluster hoort.
+ */
+export function PyChip({
+  children,
+  tone = 'model',
+  klein = false,
+}: {
+  children: ReactNode
+  tone?: 'model' | 'navy'
+  /** 11 px in plaats van 12, voor een chip naast een lang kopje in een paneel
+   *  van 16rem (zie `Sec`). */
+  klein?: boolean
+}) {
+  const maat = klein ? 'text-[11px]' : 'text-[12px]'
   return (
-    <code className="rounded bg-model/10 px-1.5 py-px font-mono text-[12px] text-model">
+    <code
+      className={
+        tone === 'navy'
+          ? `rounded bg-navy/8 px-1.5 py-px font-mono ${maat} text-navy`
+          : `rounded bg-model/10 px-1.5 py-px font-mono ${maat} text-model`
+      }
+    >
       {children}
     </code>
+  )
+}
+
+/**
+ * Kopje van een blok in het paneel, met eventueel een kort stukje rechts.
+ * `tone="muted"` is het kopje van Regressie-lab, waar dit vandaan komt.
+ * `tone="ink"` is het kopje van de andere borden (zoals Vaststelling en de
+ * Brief), voor een bord dat dit kopje naast die kopjes zet.
+ */
+export function Sec({
+  label,
+  meta,
+  id,
+  tone = 'muted',
+  breek = false,
+}: {
+  label: string
+  meta?: ReactNode
+  id?: string
+  tone?: 'muted' | 'ink'
+  /** Past het kopje niet naast `meta`, zet `meta` dan als geheel op een
+   *  eigen regel, rechts, in plaats van het kopje over twee regels te breken.
+   *  Gemeten op "Hoeveel clusters?" bij een paneel van 16rem: "AANTAL
+   *  CLUSTERS" (116 px) plus `n_clusters=5` in 12 px (100 px) plus de
+   *  tussenruimte is 224 px, in een rij van 222, en dan stond er "AANTAL" met
+   *  daaronder "CLUSTERS". Dat bord zet de chip nu in 11 px (`klein`), zodat
+   *  hij ernaast past; deze regel is het vangnet als een ander lettertype
+   *  toch breder uitvalt. */
+  breek?: boolean
+}) {
+  const kop =
+    tone === 'ink'
+      ? 'text-[11.5px] font-bold uppercase tracking-[0.09em] text-ink/75'
+      : 'text-[11px] font-semibold uppercase tracking-[0.11em] text-muted'
+  return (
+    <div
+      className={
+        breek
+          ? 'flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1'
+          : 'flex items-baseline justify-between gap-2'
+      }
+    >
+      <span id={id} className={breek ? `${kop} whitespace-nowrap` : kop}>
+        {label}
+      </span>
+      {meta && (
+        /* Twee VOLLEDIGE klassenlijsten, geen `text-muted/80${...}`. Tailwind
+           zoekt klassen als losse woorden in de broncode, en "text-muted/80"
+           plakte daar aan `${`: dan kwam de klasse niet in de css, en werd het
+           cijfer van Regressie-lab ("24 punten") inktkleur in plaats van grijs.
+           Gevonden met een pixelvergelijking tegen de versie van voor deze
+           verhuizing. */
+        <span
+          className={
+            breek
+              ? 'ml-auto text-[11.5px] leading-none text-muted/80'
+              : 'text-[11.5px] leading-none text-muted/80'
+          }
+        >
+          {meta}
+        </span>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Eén keuze uit de kiezer van de data set. De rand blijft staan als hij actief
+ * is, anders verspringt het raster een pixel bij elke wissel.
+ * `tone="navy"` op een bord waar blauw een cluster is (les 7): een blauwe
+ * actieve knop zou lezen alsof hij bij de blauwe cluster hoort.
+ */
+export function SegBtn({
+  active,
+  onClick,
+  label,
+  tone = 'model',
+}: {
+  active: boolean
+  onClick: () => void
+  label: string
+  tone?: 'model' | 'navy'
+}) {
+  const kleur =
+    tone === 'navy'
+      ? active
+        ? 'border-navy bg-navy text-white'
+        : 'border-navy/20 text-navy hover:bg-navy/5'
+      : active
+        ? 'border-model bg-model text-white'
+        : 'border-model/20 text-model hover:bg-model/6'
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-lg border px-2 py-1.5 text-[12.5px] font-semibold transition ${kleur}`}
+    >
+      {label}
+    </button>
   )
 }
 

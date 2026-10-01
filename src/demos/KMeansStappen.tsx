@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import AantalKiezer from '../components/AantalKiezer'
 import Canvas, { type Scales, type View } from '../components/Canvas'
+import { INKT, KLEUR, Tekst, Vorm, eenSchaal, reik } from '../components/ClusterVorm'
 import { Brief, Btn, Panel } from '../components/Overlay'
+import { useTweedeKlik, type Klik } from '../components/tweedeKlik'
 import Vaststelling, { getal, meervoud } from '../components/Vaststelling'
 import {
   PUNTEN,
@@ -11,23 +14,11 @@ import {
   sleutel,
   uitkomsten,
   willekeurigeStart,
+  type Aantal,
   type Punt,
 } from '../lib/kmeans'
 import { seeded } from '../lib/regression'
-import {
-  DATA,
-  DERDE,
-  DERDE_INK,
-  FOUT,
-  FOUT_INK,
-  INK,
-  MODEL,
-  MUTED,
-  NAVY,
-  VIERDE,
-  VIJFDE,
-  VIJFDE_INK,
-} from '../lib/palette'
+import { DATA, MUTED, NAVY } from '../lib/palette'
 
 /* ------------------------------------------------------------------ *
  * mAIstros 2 - les 7 - K-means stap voor stap.
@@ -96,8 +87,9 @@ import {
  * 2026-09-30 vroeg het "welk aantal past het best bij de punten?", en dat gaf
  * geen criterium dat een vijftienjarige kan nagaan (review): een aantal past
  * niet bij punten, een verdeling wel. De vraag welk aantal het best past, is
- * voor een tweede bord, "Hoeveel clusters?" (/les7/hoeveel-clusters). Dat
- * bord is GEPLAND, nog niet gebouwd (2026-09-30).
+ * voor het tweede bord, "Hoeveel clusters?" (/les7/hoeveel-clusters,
+ * HoeveelClusters.tsx, gebouwd 2026-10-01). Ook dat bord rekent geen beste
+ * aantal uit: het toont dat k-means zoveel clusters maakt als je vraagt.
  *   Een ander aantal kiezen wist de hele run: centroids, clusters, ringen,
  * stippelvormen, de teller en een schuivende centroid die nog onderweg is.
  * Niets van een run met 5 clusters mag blijven hangen op een bord met 2.
@@ -151,40 +143,13 @@ import {
  * merken onder een paneel liggen en welke annotaties er tegelijk staan.
  * ------------------------------------------------------------------ */
 
-/** 2 tot 5 clusters: het bereik van Stap 6 (2129379). */
-type Aantal = 2 | 3 | 4 | 5
-const AANTALLEN: readonly Aantal[] = [2, 3, 4, 5]
+/* Het aantal clusters, 2 tot 5 (het bereik van Stap 6, 2129379), staat in
+   src/lib/kmeans.ts: "Hoeveel clusters?" kiest uit dezelfde vier. */
 
 /* ----------------------------- de merken ---------------------------- *
- * Elke cluster heeft een eigen VORM en een eigen kleur. Nooit kleur alleen:
- * ook de lijntjes van elk punt naar zijn centroid zeggen bij wie het hoort.
- *
- *   1 blauw rondje, 2 oranje vierkant      de kleuren van de les (2129259)
- *   3 groene ruit, 4 rode driehoek, 5 roze driehoek met de punt naar onder
- *
- * Een punt zonder cluster is een volle navy stip: dat leest als de "zwarte
- * bollen" van slide 2129261. DAAROM MAG GEEN ENKELE CLUSTER NAVY ZIJN. Tot
- * 2026-09-30 was de derde cluster een open ruit in navy, en dan logen twee
- * zinnen (review, gerenderd op 1440 en 1024): na knop 1 zei de teller "18 van
- * de 18 punten veranderden van kleur" en "nu heeft elk punt de kleur van zijn
- * cluster", terwijl de ruiten zwart bleven. Met de kiezer zou dat bij elk
- * aantal vanaf 3 gebeuren. Nu heeft elke cluster een echte tint.
- *
- * De vijf tinten zijn getoetst als set, ALLE paren, want op een puntenwolk
- * kan elke cluster naast elke andere liggen: validate_palette.js --mode light
- * --pairs all, alles PASS (details in index.css). Het zwakste paar is
- * groen/oranje met dE 8,9 onder protanopie. De oude opmerking hier (en in
- * KweekDeBoom) dat groen tegen dat oranje naar dE 4,0 zakt, geldt niet voor
- * DERDE: de validator geeft DERDE tegen FOUT 8,9. CLAUDE.md schrijft die 4,0
- * toe aan het donkergroen van CodeFever zelf.
- *   Tegen navy, de kleur van "nog geen cluster", haalt elke tint minstens
- * dE 35,3 bij gewoon zicht en 22,6 onder protanopie (rood). Geen cluster kan
- * dus doorgaan voor "zwart".
- *   Groen en rood staan samen in deze set, en dat mag hier: DERDE tegen
- * VIERDE geeft dE 11,1 onder deuteranopie en 29,9 bij gewoon zicht, PASS.
- * CLAUDE.md zegt dat elk paar rood en groen zakt "however you step it". Voor
- * deze twee tinten klopt dat niet (gemeten 2026-09-30). Draai de validator
- * opnieuw in plaats van een van beide zinnen te geloven.
+ * Vorm, kleur en inkt van elke cluster staan in src/components/ClusterVorm.tsx,
+ * samen met de uitleg waarom het deze vijf zijn: "Hoeveel clusters?" tekent
+ * dezelfde clusters, en een cluster moet er op beide borden hetzelfde uitzien.
  *
  * EEN CENTROID OP EEN PUNT leek op het teken ©: een gekleurde rand, een vol
  * navy punt erin, en daarop een gekleurde C met een witte rand. Dat stond er
@@ -207,112 +172,7 @@ const AANTALLEN: readonly Aantal[] = [2, 3, 4, 5]
  * het punt, en een verborgen punt deed de teller al eens liegen ("18 van de
  * 18" met 16 zichtbare kleuren, zie 2b hieronder). Het gekozen punt al in de
  * clusterkleur zetten maakt "Alle punten waren zwart" vals.
- *
- * Oranje betekent hier "de oranje cluster" en niet "fout", en rood "de rode
- * cluster": er staat op dit bord geen enkele misser.                       */
-
-const KLEUR = [MODEL, FOUT, DERDE, VIERDE, VIJFDE] as const
-/** De letter C op een centroid: minstens 4,5:1 op wit. MODEL haalt 4,51 en
- *  VIERDE 6,95 zelf; de andere drie krijgen hun inkt. */
-const INKT = [MODEL, FOUT_INK, DERDE_INK, VIERDE, VIJFDE_INK] as const
-
-/** Een driehoek met deze omtrekstraal (maal r) heeft dezelfde oppervlakte als
- *  een rondje met straal r: 1,299 x 1,55² = 3,12, tegen pi = 3,14. Zo weegt geen
- *  cluster zwaarder op het bord omdat zijn vorm groter is. */
-const DRIEHOEK = 1.55
-
-/** Hoe ver een vorm vanuit zijn midden reikt. De ring rond een punt dat net
- *  wisselde moet daarbuiten liggen: r + 6 is genoeg voor rondje, vierkant
- *  (1,27 r) en ruit (1,25 r), maar een punt van een driehoek staat op 1,55 r en
- *  stak door die ring heen. */
-function reik(cluster: number, r: number) {
-  return cluster >= 3 ? r * DRIEHOEK : r
-}
-
-function Vorm({
-  cluster,
-  x,
-  y,
-  r,
-  vol = true,
-  dik = 0,
-  streep = false,
-  opacity = 1,
-}: {
-  /** -1 = nog geen cluster. */
-  cluster: number
-  x: number
-  y: number
-  r: number
-  /** Vol met de clusterkleur, of wit met een rand in de clusterkleur. */
-  vol?: boolean
-  dik?: number
-  streep?: boolean
-  opacity?: number
-}) {
-  if (cluster < 0) return <circle cx={x} cy={y} r={r} fill={DATA} opacity={opacity} />
-  const kleur = KLEUR[cluster]
-  const fill = streep ? 'none' : vol ? kleur : '#fff'
-  const stroke = !vol || dik > 0 ? kleur : 'none'
-  const sw = dik > 0 ? dik : !vol ? 2.5 : 0
-  const dash = streep ? '5 4' : undefined
-  const common = { fill, stroke, strokeWidth: sw, strokeDasharray: dash, opacity }
-  if (cluster === 0) return <circle cx={x} cy={y} r={r} {...common} />
-  if (cluster === 1) {
-    const h = r * 0.9
-    return <rect x={x - h} y={y - h} width={h * 2} height={h * 2} {...common} />
-  }
-  if (cluster === 2) {
-    const d = r * 1.25
-    return <path d={`M ${x} ${y - d} L ${x + d} ${y} L ${x} ${y + d} L ${x - d} ${y} Z`} {...common} />
-  }
-  /* Een driehoek met zijn zwaartepunt op het punt, zodat het lijntje naar de
-     centroid uit het midden vertrekt. Ronde hoeken in de rand: bij een
-     scherpe hoek van 60 graden steekt een rand een volle randdikte voorbij de
-     punt uit, twee keer zo ver als langs de zijden. */
-  const d = r * DRIEHOEK
-  const w = d * 0.866
-  const op = cluster === 3 ? -1 : 1
-  return (
-    <path
-      d={`M ${x} ${y + op * d} L ${x + w} ${y - (op * d) / 2} L ${x - w} ${y - (op * d) / 2} Z`}
-      strokeLinejoin="round"
-      {...common}
-    />
-  )
-}
-
-/** Tekst op het bord: minstens 13 px, vet, met een witte rand eronder. */
-function Tekst({
-  x,
-  y,
-  children,
-  maat = 15,
-  kleur = INK,
-}: {
-  x: number
-  y: number
-  children: string
-  maat?: number
-  kleur?: string
-}) {
-  return (
-    <text
-      x={x}
-      y={y}
-      fontSize={maat}
-      fontWeight={700}
-      fill={kleur}
-      textAnchor="middle"
-      stroke="#fff"
-      strokeWidth={3.5}
-      paintOrder="stroke"
-      pointerEvents="none"
-    >
-      {children}
-    </text>
-  )
-}
+ *                                                                    */
 
 /* ---------------------------- de meetkunde --------------------------- *
  * De punten staan in de pixels van de slide (1212 x 662, y omgedraaid). Het
@@ -367,19 +227,8 @@ type Fase = 'kiezen' | 'stap1' | 'stap2' | 'klaar'
  * De kiezer en de knoppen van het algoritme schuiven dus nog mee met de
  * hoogte van het paneel, en daarvoor is deze toets er ook.               */
 
-/** Wat `useTweedeKlik` van een klik nodig heeft. */
-type Klik = { detail: number; timeStamp: number; clientX: number; clientY: number }
-
-function useTweedeKlik() {
-  const vorige = useRef<{ t: number; x: number; y: number } | null>(null)
-  return (e: Klik) => {
-    if (e.detail === 0) return false
-    const v = vorige.current
-    vorige.current = { t: e.timeStamp, x: e.clientX, y: e.clientY }
-    if (e.detail > 1) return true
-    return v !== null && e.timeStamp - v.t < 400 && Math.hypot(e.clientX - v.x, e.clientY - v.y) < 10
-  }
-}
+/* `useTweedeKlik` zelf staat in src/components/tweedeKlik.ts, zodat "Hoeveel
+   clusters?" dezelfde regel gebruikt. */
 
 /* ------------------------------ de tekening -------------------------- */
 
@@ -433,9 +282,7 @@ function Bord({
   onKlik: (i: number) => void
   tweedeKlik: (e: Klik) => boolean
 }) {
-  const schaal = Math.min(1 / s.unitPerPx.x, 1 / s.unitPerPx.y)
-  const X = (x: number) => s.sx(MX) + (x - MX) * schaal
-  const Y = (y: number) => s.sy(MY) - (y - MY) * schaal
+  const { schaal, X, Y } = eenSchaal(s, MX, MY)
   /* De maat van een punt volgt de schaal, zodat de prent op elke beamer op de
      slide lijkt, maar nooit onder 10 px: op 900x700 is de schaal 0,47 en de
      kleinste afstand tussen twee punten dan 51 px, dus ook een centroid van
@@ -627,45 +474,8 @@ function Bord({
   )
 }
 
-/* ------------------------------ de kiezer --------------------------- *
- * Vier knoppen, 2 tot 5. De gekozen knop is navy en niet blauw: blauw is op
- * dit bord de kleur van cluster 1, en een blauwe "4" zou lezen alsof die knop
- * iets met de blauwe cluster te maken heeft. Navy is de kleur van alle
- * knoptekst op dit bord, dus de gekozen knop is gewoon een omgekeerde knop.
- * De rand blijft ook bij de gekozen knop staan, anders verspringt het raster
- * een pixel bij elke keuze.                                                */
-
-function Kiezer({ aantal, onKies }: { aantal: Aantal; onKies: (k: Aantal) => void }) {
-  return (
-    <div>
-      <div
-        id="kmeans-aantal"
-        className="text-[11.5px] font-bold uppercase tracking-[0.09em] text-ink/75"
-      >
-        Aantal clusters
-      </div>
-      <div role="group" aria-labelledby="kmeans-aantal" className="mt-1.5 grid grid-cols-4 gap-1.5">
-        {AANTALLEN.map((k) => {
-          const aan = k === aantal
-          return (
-            <button
-              key={k}
-              type="button"
-              onClick={() => onKies(k)}
-              aria-pressed={aan}
-              className={`h-8 rounded-full font-display text-[15px] font-extrabold tabular-nums transition ${
-                aan ? 'bg-navy text-white' : 'bg-white text-navy hover:bg-navy/5'
-              }`}
-              style={{ boxShadow: `inset 0 0 0 1.5px ${aan ? NAVY : 'color-mix(in srgb, var(--color-navy) 22%, white)'}` }}
-            >
-              {k}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
+/* De kiezer (2 tot 5) staat in src/components/AantalKiezer.tsx: "Hoeveel
+   clusters?" gebruikt dezelfde vier knoppen. */
 
 /* ------------------------------- het bord --------------------------- */
 
@@ -1073,7 +883,7 @@ export default function KMeansStappen() {
               dichtste centroid, en kiest de leerling punten en een aantal. Een
               derde die "kiest" is een woord voor twee dingen. Het bord rekent
               geen beste aantal uit: de les oordeelt door te kijken (2129261). */}
-          <Kiezer aantal={aantal} onKies={kiesAantal} />
+          <AantalKiezer aantal={aantal} onKies={kiesAantal} />
           {fase === 'kiezen' && (
             <p className="mt-2 text-[13.5px] leading-snug text-ink">
               K-means beslist niet hoeveel clusters er komen. Dat kies jij.
@@ -1089,7 +899,7 @@ export default function KMeansStappen() {
               wellicht verwachtte toen je naar de zwarte punten keek", 2129261).
               Dat kan een leerling nagaan, "welk aantal past het best bij de
               punten?" niet: een aantal past niet bij punten. Welk aantal het
-              best past, is voor het geplande bord "Hoeveel clusters?". Drie
+              best past, is voor het tweede bord "Hoeveel clusters?". Drie
               korte zinnen en geen lange: "Vergelijk de clusters met de groepjes
               die je zag toen de punten nog zwart waren" heeft drie delen. En
               nergens "bij de start": op dit bord is de start de gekozen punten.

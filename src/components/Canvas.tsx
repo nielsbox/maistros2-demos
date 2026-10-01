@@ -132,8 +132,15 @@ export default function Canvas({
   insets,
   onBoardClick,
   axes = true,
+  label,
 }: {
   defaultView: View
+  /**
+   * Wat het bord toont, in één zin, voor een schermlezer: de svg krijgt dan
+   * role="img" en deze aria-label. Alleen voor een bord zonder klikbare merken
+   * erin ("Hoeveel clusters?"): role="img" verbergt wat erin staat.
+   */
+  label?: string
   xLabel?: string
   yLabel?: string
   /**
@@ -566,6 +573,8 @@ export default function Canvas({
           width={w}
           height={h}
           viewBox={`0 0 ${w} ${h}`}
+          role={label ? 'img' : undefined}
+          aria-label={label}
           className={`absolute inset-0 touch-none no-select ${panning ? 'cursor-grabbing' : 'cursor-grab'}`}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}

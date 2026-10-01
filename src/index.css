@@ -140,6 +140,33 @@ input[type='range']::-moz-range-thumb {
   background: #fff;
 }
 
+/* "Hoeveel clusters?": de punten krijgen hun cluster in 250 ms, van de oude
+   kleur naar de nieuwe. De punten zelf bewegen nooit. Onder
+   prefers-reduced-motion zet de regel hieronder elke animatie uit, en tekent
+   het bord de oude laag dan ook niet (zie HoeveelClusters.tsx). */
+@keyframes kc-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes kc-uit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.kc-in {
+  animation: kc-in 250ms ease-out both;
+}
+.kc-uit {
+  animation: kc-uit 250ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     transition-duration: 0.01ms !important;
