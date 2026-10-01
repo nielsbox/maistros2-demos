@@ -16,6 +16,7 @@ import KweekDeBoom from './demos/KweekDeBoom'
 import KijkInDeQTabel from './demos/KijkInDeQTabel'
 import StemmendBos from './demos/StemmendBos'
 import KMeansStappen from './demos/KMeansStappen'
+import WatDoetHetModelNa from './demos/WatDoetHetModelNa'
 
 export default function App() {
   return (
@@ -39,6 +40,8 @@ export default function App() {
         <Route path="/les6/het-bos-stemt" element={<StemmendBos />} />
         {/* les 7: idem (KMeansStappen.tsx) */}
         <Route path="/les7/k-means-stap-voor-stap" element={<KMeansStappen />} />
+        {/* les 11: de route volgt de titel op het bord (WatDoetHetModelNa.tsx) */}
+        <Route path="/les11/wat-doet-het-model-na" element={<WatDoetHetModelNa />} />
         {/* les 12 */}
         <Route path="/les12/kijk-in-de-q-tabel" element={<KijkInDeQTabel />} />
         {/*
